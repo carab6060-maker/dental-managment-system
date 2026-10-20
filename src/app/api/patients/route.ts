@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServiceSupabase, isSupabaseConfigured } from '@/lib/supabase';
+import { query, isDbConfigured } from '@/lib/db';
 import { mockStore } from '@/lib/mockStore';
 
 export const dynamic = 'force-dynamic';
@@ -10,31 +10,33 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
-
-    if (!isSupabaseConfigured()) {
-      const data = mockStore.getPatients(search, limit);
-      return NextResponse.json({ data, count: data.length, page, limit });
-    }
-
-    const supabase = getServiceSupabase();
     const offset = (page - 1) * limit;
 
-    let query = supabase
-      .from('patients')
-      .select('*', { count: 'exact' })
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+    if (isDbConfigured()) {
+      let q = 'SELECT * FROM patients WHERE is_active = true';
+      const params: any[] = [];
 
-    if (search) {
-      query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`);
+      if (search) {
+        q += ' AND (first_name ILIKE $1 OR last_name ILIKE $1 OR phone ILIKE $1 OR email ILIKE $1)';
+        params.push(`%${search}%`);
+      }
+
+      q += ' ORDER BY created_at DESC';
+
+      // Count query
+      const countRes = await query(`SELECT count(*) as total FROM (${q}) as sub`, params);
+      const total = parseInt(countRes.rows[0].total);
+
+      // Pagination
+      q += ` LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+      params.push(limit, offset);
+
+      const res = await query(q, params);
+      return NextResponse.json({ data: res.rows, count: total, page, limit });
     }
 
-    const { data, error, count } = await query;
-
-    if (error) throw error;
-
-    return NextResponse.json({ data, count, page, limit });
+    const data = mockStore.getPatients(search, limit);
+    return NextResponse.json({ data, count: data.length, page, limit });
   } catch (err: any) {
     console.error('Error fetching patients:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -45,21 +47,39 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (!isSupabaseConfigured()) {
-      const newPatient = mockStore.addPatient(body);
-      return NextResponse.json(newPatient, { status: 201 });
+    if (isDbConfigured()) {
+      const res = await query(
+        `INSERT INTO patients (
+          first_name, last_name, date_of_birth, gender, email, phone,
+          address, city, emergency_contact_name, emergency_contact_phone,
+          blood_group, allergies, medical_history, insurance_provider,
+          insurance_number, notes
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        RETURNING *`,
+        [
+          body.first_name,
+          body.last_name,
+          body.date_of_birth || null,
+          body.gender || null,
+          body.email || null,
+          body.phone,
+          body.address || null,
+          body.city || null,
+          body.emergency_contact_name || null,
+          body.emergency_contact_phone || null,
+          body.blood_group || null,
+          body.allergies || null,
+          body.medical_history || null,
+          body.insurance_provider || null,
+          body.insurance_number || null,
+          body.notes || null,
+        ]
+      );
+      return NextResponse.json(res.rows[0], { status: 201 });
     }
 
-    const supabase = getServiceSupabase();
-    const { data, error } = await supabase
-      .from('patients')
-      .insert([body])
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return NextResponse.json(data, { status: 201 });
+    const newPatient = mockStore.addPatient(body);
+    return NextResponse.json(newPatient, { status: 201 });
   } catch (err: any) {
     console.error('Error creating patient:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

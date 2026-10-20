@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServiceSupabase, isSupabaseConfigured } from '@/lib/supabase';
+import { query, isDbConfigured } from '@/lib/db';
 import { mockStore } from '@/lib/mockStore';
 
 export const dynamic = 'force-dynamic';
@@ -10,29 +10,36 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || '';
     const patientId = searchParams.get('patient_id') || '';
 
-    if (!isSupabaseConfigured()) {
-      const data = mockStore.getInvoices(status, patientId);
-      return NextResponse.json({ data });
+    if (isDbConfigured()) {
+      let q = `
+        SELECT 
+          i.*,
+          json_build_object('id', p.id, 'first_name', p.first_name, 'last_name', p.last_name, 'phone', p.phone, 'email', p.email) as patients,
+          COALESCE(
+            (SELECT json_agg(item) FROM invoice_items item WHERE item.invoice_id = i.id),
+            '[]'::json
+          ) as invoice_items
+        FROM invoices i
+        LEFT JOIN patients p ON i.patient_id = p.id
+        WHERE 1=1
+      `;
+      const params: any[] = [];
+
+      if (status) {
+        q += ` AND i.status = $${params.length + 1}`;
+        params.push(status);
+      }
+      if (patientId) {
+        q += ` AND i.patient_id = $${params.length + 1}`;
+        params.push(patientId);
+      }
+
+      q += ' ORDER BY i.created_at DESC';
+      const res = await query(q, params);
+      return NextResponse.json({ data: res.rows });
     }
 
-    const supabase = getServiceSupabase();
-
-    let query = supabase
-      .from('invoices')
-      .select(`
-        *,
-        patients:patient_id (id, first_name, last_name, phone, email),
-        invoice_items (id, description, quantity, unit_price, total, treatment_id)
-      `)
-      .order('created_at', { ascending: false });
-
-    if (status) query = query.eq('status', status);
-    if (patientId) query = query.eq('patient_id', patientId);
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-
+    const data = mockStore.getInvoices(status, patientId);
     return NextResponse.json({ data });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -44,52 +51,67 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { items, ...invoiceData } = body;
 
-    if (!isSupabaseConfigured()) {
-      const invoice = mockStore.addInvoice(invoiceData, items || []);
+    if (isDbConfigured()) {
+      // Calculate totals
+      const subtotal = (items || []).reduce(
+        (sum: number, item: any) => sum + (Number(item.quantity) * Number(item.unit_price)),
+        0
+      );
+      const taxRate = Number(invoiceData.tax_rate || 0);
+      const taxAmount = (subtotal * taxRate) / 100;
+      const discount = Number(invoiceData.discount || 0);
+      const total = Math.max(0, subtotal + taxAmount - discount);
+
+      // Create invoice (invoice_number handled by DB trigger or manual fallback)
+      const countRes = await query('SELECT count(*) as count FROM invoices');
+      const invNum = `INV-${String(parseInt(countRes.rows[0].count) + 1).padStart(6, '0')}`;
+
+      const invRes = await query(
+        `INSERT INTO invoices (
+          invoice_number, patient_id, appointment_id, subtotal,
+          tax_rate, tax_amount, discount, total, amount_paid,
+          balance_due, status, due_date, notes
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, $8, 'pending', $9, $10)
+        RETURNING *`,
+        [
+          invNum,
+          invoiceData.patient_id,
+          invoiceData.appointment_id || null,
+          subtotal,
+          taxRate,
+          taxAmount,
+          discount,
+          total,
+          invoiceData.due_date || null,
+          invoiceData.notes || null,
+        ]
+      );
+
+      const invoice = invRes.rows[0];
+
+      // Insert line items
+      if (items && items.length > 0) {
+        for (const item of items) {
+          const itemTotal = Number(item.quantity) * Number(item.unit_price);
+          await query(
+            `INSERT INTO invoice_items (invoice_id, treatment_id, description, quantity, unit_price, total)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [
+              invoice.id,
+              item.treatment_id || null,
+              item.description,
+              Number(item.quantity) || 1,
+              Number(item.unit_price) || 0,
+              itemTotal,
+            ]
+          );
+        }
+      }
+
       return NextResponse.json(invoice, { status: 201 });
     }
 
-    const supabase = getServiceSupabase();
-
-    // Calculate totals
-    const subtotal = items.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
-    const taxAmount = subtotal * (invoiceData.tax_rate || 0) / 100;
-    const total = subtotal + taxAmount - (invoiceData.discount || 0);
-
-    // Create invoice
-    const { data: invoice, error: invoiceError } = await supabase
-      .from('invoices')
-      .insert([{
-        ...invoiceData,
-        subtotal,
-        tax_amount: taxAmount,
-        total,
-        balance_due: total,
-        amount_paid: 0,
-      }])
-      .select()
-      .single();
-
-    if (invoiceError) throw invoiceError;
-
-    // Create invoice items
-    if (items && items.length > 0) {
-      const invoiceItems = items.map((item: any) => ({
-        invoice_id: invoice.id,
-        treatment_id: item.treatment_id || null,
-        description: item.description,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total: item.quantity * item.unit_price,
-      }));
-
-      const { error: itemsError } = await supabase
-        .from('invoice_items')
-        .insert(invoiceItems);
-
-      if (itemsError) throw itemsError;
-    }
-
+    const invoice = mockStore.addInvoice(invoiceData, items || []);
     return NextResponse.json(invoice, { status: 201 });
   } catch (err: any) {
     console.error('Error creating invoice:', err);

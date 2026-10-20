@@ -6,6 +6,9 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  experimental: {
+    serverComponentsExternalPackages: ['ws', '@neondatabase/serverless'],
+  },
 };
 
 module.exports = nextConfig;

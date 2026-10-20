@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServiceSupabase, isSupabaseConfigured } from '@/lib/supabase';
+import { query, isDbConfigured } from '@/lib/db';
 import { mockStore } from '@/lib/mockStore';
 
 export const dynamic = 'force-dynamic';
@@ -9,23 +9,15 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    if (!isSupabaseConfigured()) {
-      const treatment = mockStore.getTreatment(params.id);
-      if (!treatment) return NextResponse.json({ error: 'Treatment not found' }, { status: 404 });
-      return NextResponse.json(treatment);
+    if (isDbConfigured()) {
+      const res = await query('SELECT * FROM treatments WHERE id = $1', [params.id]);
+      if (res.rows.length === 0) return NextResponse.json({ error: 'Treatment not found' }, { status: 404 });
+      return NextResponse.json(res.rows[0]);
     }
 
-    const supabase = getServiceSupabase();
-    const { data, error } = await supabase
-      .from('treatments')
-      .select('*')
-      .eq('id', params.id)
-      .single();
-
-    if (error) throw error;
-    if (!data) return NextResponse.json({ error: 'Treatment not found' }, { status: 404 });
-
-    return NextResponse.json(data);
+    const treatment = mockStore.getTreatment(params.id);
+    if (!treatment) return NextResponse.json({ error: 'Treatment not found' }, { status: 404 });
+    return NextResponse.json(treatment);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
@@ -38,25 +30,33 @@ export async function PUT(
   try {
     const body = await request.json();
 
-    if (!isSupabaseConfigured()) {
-      const updated = mockStore.updateTreatment(params.id, body);
-      if (!updated) return NextResponse.json({ error: 'Treatment not found' }, { status: 404 });
-      return NextResponse.json(updated);
+    if (isDbConfigured()) {
+      const res = await query(
+        `UPDATE treatments SET
+          name = COALESCE($1, name),
+          category = COALESCE($2, category),
+          description = COALESCE($3, description),
+          duration_minutes = COALESCE($4, duration_minutes),
+          cost = COALESCE($5, cost),
+          updated_at = NOW()
+        WHERE id = $6
+        RETURNING *`,
+        [
+          body.name,
+          body.category,
+          body.description,
+          body.duration_minutes !== undefined ? Number(body.duration_minutes) : null,
+          body.cost !== undefined ? Number(body.cost) : null,
+          params.id,
+        ]
+      );
+      if (res.rows.length === 0) return NextResponse.json({ error: 'Treatment not found' }, { status: 404 });
+      return NextResponse.json(res.rows[0]);
     }
 
-    const supabase = getServiceSupabase();
-    body.updated_at = new Date().toISOString();
-
-    const { data, error } = await supabase
-      .from('treatments')
-      .update(body)
-      .eq('id', params.id)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return NextResponse.json(data);
+    const updated = mockStore.updateTreatment(params.id, body);
+    if (!updated) return NextResponse.json({ error: 'Treatment not found' }, { status: 404 });
+    return NextResponse.json(updated);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
@@ -67,19 +67,12 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    if (!isSupabaseConfigured()) {
-      mockStore.deleteTreatment(params.id);
+    if (isDbConfigured()) {
+      await query('UPDATE treatments SET is_active = false, updated_at = NOW() WHERE id = $1', [params.id]);
       return NextResponse.json({ message: 'Treatment deleted' });
     }
 
-    const supabase = getServiceSupabase();
-    const { error } = await supabase
-      .from('treatments')
-      .update({ is_active: false, updated_at: new Date().toISOString() })
-      .eq('id', params.id);
-
-    if (error) throw error;
-
+    mockStore.deleteTreatment(params.id);
     return NextResponse.json({ message: 'Treatment deleted' });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

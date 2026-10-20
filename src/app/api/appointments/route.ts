@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServiceSupabase, isSupabaseConfigured } from '@/lib/supabase';
+import { query, isDbConfigured } from '@/lib/db';
 import { mockStore } from '@/lib/mockStore';
 
 export const dynamic = 'force-dynamic';
@@ -11,38 +11,55 @@ export async function GET(request: NextRequest) {
     const doctorId = searchParams.get('doctor_id') || '';
     const patientId = searchParams.get('patient_id') || '';
     const status = searchParams.get('status') || '';
-
-    if (!isSupabaseConfigured()) {
-      const data = mockStore.getAppointments(date, status, doctorId, patientId);
-      return NextResponse.json({ data });
-    }
-
-    const supabase = getServiceSupabase();
     const from = searchParams.get('from') || '';
     const to = searchParams.get('to') || '';
 
-    let query = supabase
-      .from('appointments')
-      .select(`
-        *,
-        patients:patient_id (id, first_name, last_name, phone, email),
-        doctors:doctor_id (id, first_name, last_name, specialization),
-        treatments:treatment_id (id, name, cost, duration_minutes)
-      `)
-      .order('appointment_date', { ascending: false })
-      .order('start_time', { ascending: true });
+    if (isDbConfigured()) {
+      let q = `
+        SELECT 
+          a.*,
+          json_build_object('id', p.id, 'first_name', p.first_name, 'last_name', p.last_name, 'phone', p.phone, 'email', p.email) as patients,
+          json_build_object('id', d.id, 'first_name', d.first_name, 'last_name', d.last_name, 'specialization', d.specialization) as doctors,
+          json_build_object('id', t.id, 'name', t.name, 'cost', t.cost, 'duration_minutes', t.duration_minutes) as treatments
+        FROM appointments a
+        LEFT JOIN patients p ON a.patient_id = p.id
+        LEFT JOIN doctors d ON a.doctor_id = d.id
+        LEFT JOIN treatments t ON a.treatment_id = t.id
+        WHERE 1=1
+      `;
+      const params: any[] = [];
 
-    if (date) query = query.eq('appointment_date', date);
-    if (doctorId) query = query.eq('doctor_id', doctorId);
-    if (patientId) query = query.eq('patient_id', patientId);
-    if (status) query = query.eq('status', status);
-    if (from) query = query.gte('appointment_date', from);
-    if (to) query = query.lte('appointment_date', to);
+      if (date) {
+        q += ` AND a.appointment_date = $${params.length + 1}`;
+        params.push(date);
+      }
+      if (doctorId) {
+        q += ` AND a.doctor_id = $${params.length + 1}`;
+        params.push(doctorId);
+      }
+      if (patientId) {
+        q += ` AND a.patient_id = $${params.length + 1}`;
+        params.push(patientId);
+      }
+      if (status) {
+        q += ` AND a.status = $${params.length + 1}`;
+        params.push(status);
+      }
+      if (from) {
+        q += ` AND a.appointment_date >= $${params.length + 1}`;
+        params.push(from);
+      }
+      if (to) {
+        q += ` AND a.appointment_date <= $${params.length + 1}`;
+        params.push(to);
+      }
 
-    const { data, error } = await query;
+      q += ' ORDER BY a.appointment_date DESC, a.start_time ASC';
+      const res = await query(q, params);
+      return NextResponse.json({ data: res.rows });
+    }
 
-    if (error) throw error;
-
+    const data = mockStore.getAppointments(date, status, doctorId, patientId);
     return NextResponse.json({ data });
   } catch (err: any) {
     console.error('Error fetching appointments:', err);
@@ -54,54 +71,68 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    if (!isSupabaseConfigured()) {
-      // Conflict check in mock
-      const existing = mockStore.getAppointments(body.appointment_date, '', body.doctor_id);
-      const conflict = existing.find(
-        (a) => a.start_time.slice(0, 5) === body.start_time.slice(0, 5) && a.status !== 'cancelled'
+    if (isDbConfigured()) {
+      // Conflict check
+      const conflicts = await query(
+        `SELECT id FROM appointments 
+         WHERE doctor_id = $1 AND appointment_date = $2 AND start_time = $3 AND status != 'cancelled'`,
+        [body.doctor_id, body.appointment_date, body.start_time]
       );
-      if (conflict) {
+
+      if (conflicts.rows.length > 0) {
         return NextResponse.json(
           { error: 'This time slot is already booked for the selected doctor' },
           { status: 409 }
         );
       }
-      const newApt = mockStore.addAppointment(body);
-      return NextResponse.json(mockStore.getAppointment(newApt.id), { status: 201 });
+
+      const res = await query(
+        `INSERT INTO appointments (
+          patient_id, doctor_id, treatment_id, appointment_date, start_time, end_time, status, notes
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *`,
+        [
+          body.patient_id,
+          body.doctor_id,
+          body.treatment_id || null,
+          body.appointment_date,
+          body.start_time,
+          body.end_time || null,
+          body.status || 'scheduled',
+          body.notes || null,
+        ]
+      );
+
+      // Fetch with relations
+      const detail = await query(
+        `SELECT 
+          a.*,
+          json_build_object('id', p.id, 'first_name', p.first_name, 'last_name', p.last_name, 'phone', p.phone) as patients,
+          json_build_object('id', d.id, 'first_name', d.first_name, 'last_name', d.last_name, 'specialization', d.specialization) as doctors,
+          json_build_object('id', t.id, 'name', t.name, 'cost', t.cost) as treatments
+        FROM appointments a
+        LEFT JOIN patients p ON a.patient_id = p.id
+        LEFT JOIN doctors d ON a.doctor_id = d.id
+        LEFT JOIN treatments t ON a.treatment_id = t.id
+        WHERE a.id = $1`,
+        [res.rows[0].id]
+      );
+
+      return NextResponse.json(detail.rows[0], { status: 201 });
     }
 
-    const supabase = getServiceSupabase();
-
-    // Check for scheduling conflicts
-    const { data: conflicts } = await supabase
-      .from('appointments')
-      .select('id')
-      .eq('doctor_id', body.doctor_id)
-      .eq('appointment_date', body.appointment_date)
-      .eq('start_time', body.start_time)
-      .not('status', 'eq', 'cancelled');
-
-    if (conflicts && conflicts.length > 0) {
+    const existing = mockStore.getAppointments(body.appointment_date, '', body.doctor_id);
+    const conflict = existing.find(
+      (a) => a.start_time.slice(0, 5) === body.start_time.slice(0, 5) && a.status !== 'cancelled'
+    );
+    if (conflict) {
       return NextResponse.json(
         { error: 'This time slot is already booked for the selected doctor' },
         { status: 409 }
       );
     }
-
-    const { data, error } = await supabase
-      .from('appointments')
-      .insert([body])
-      .select(`
-        *,
-        patients:patient_id (id, first_name, last_name, phone),
-        doctors:doctor_id (id, first_name, last_name, specialization),
-        treatments:treatment_id (id, name, cost)
-      `)
-      .single();
-
-    if (error) throw error;
-
-    return NextResponse.json(data, { status: 201 });
+    const newApt = mockStore.addAppointment(body);
+    return NextResponse.json(mockStore.getAppointment(newApt.id), { status: 201 });
   } catch (err: any) {
     console.error('Error creating appointment:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

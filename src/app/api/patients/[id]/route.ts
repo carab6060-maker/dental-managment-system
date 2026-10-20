@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServiceSupabase, isSupabaseConfigured } from '@/lib/supabase';
+import { query, isDbConfigured } from '@/lib/db';
 import { mockStore } from '@/lib/mockStore';
 
 export const dynamic = 'force-dynamic';
@@ -9,23 +9,17 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    if (!isSupabaseConfigured()) {
-      const patient = mockStore.getPatient(params.id);
-      if (!patient) return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
-      return NextResponse.json(patient);
+    if (isDbConfigured()) {
+      const res = await query('SELECT * FROM patients WHERE id = $1', [params.id]);
+      if (res.rows.length === 0) {
+        return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
+      }
+      return NextResponse.json(res.rows[0]);
     }
 
-    const supabase = getServiceSupabase();
-    const { data, error } = await supabase
-      .from('patients')
-      .select('*')
-      .eq('id', params.id)
-      .single();
-
-    if (error) throw error;
-    if (!data) return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
-
-    return NextResponse.json(data);
+    const patient = mockStore.getPatient(params.id);
+    if (!patient) return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
+    return NextResponse.json(patient);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
@@ -38,25 +32,55 @@ export async function PUT(
   try {
     const body = await request.json();
 
-    if (!isSupabaseConfigured()) {
-      const updated = mockStore.updatePatient(params.id, body);
-      if (!updated) return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
-      return NextResponse.json(updated);
+    if (isDbConfigured()) {
+      const res = await query(
+        `UPDATE patients SET
+          first_name = COALESCE($1, first_name),
+          last_name = COALESCE($2, last_name),
+          date_of_birth = COALESCE($3, date_of_birth),
+          gender = COALESCE($4, gender),
+          email = COALESCE($5, email),
+          phone = COALESCE($6, phone),
+          address = COALESCE($7, address),
+          city = COALESCE($8, city),
+          emergency_contact_name = COALESCE($9, emergency_contact_name),
+          emergency_contact_phone = COALESCE($10, emergency_contact_phone),
+          blood_group = COALESCE($11, blood_group),
+          allergies = COALESCE($12, allergies),
+          medical_history = COALESCE($13, medical_history),
+          insurance_provider = COALESCE($14, insurance_provider),
+          insurance_number = COALESCE($15, insurance_number),
+          notes = COALESCE($16, notes),
+          updated_at = NOW()
+        WHERE id = $17
+        RETURNING *`,
+        [
+          body.first_name,
+          body.last_name,
+          body.date_of_birth,
+          body.gender,
+          body.email,
+          body.phone,
+          body.address,
+          body.city,
+          body.emergency_contact_name,
+          body.emergency_contact_phone,
+          body.blood_group,
+          body.allergies,
+          body.medical_history,
+          body.insurance_provider,
+          body.insurance_number,
+          body.notes,
+          params.id,
+        ]
+      );
+      if (res.rows.length === 0) return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
+      return NextResponse.json(res.rows[0]);
     }
 
-    const supabase = getServiceSupabase();
-    body.updated_at = new Date().toISOString();
-
-    const { data, error } = await supabase
-      .from('patients')
-      .update(body)
-      .eq('id', params.id)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return NextResponse.json(data);
+    const updated = mockStore.updatePatient(params.id, body);
+    if (!updated) return NextResponse.json({ error: 'Patient not found' }, { status: 404 });
+    return NextResponse.json(updated);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
@@ -67,19 +91,12 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    if (!isSupabaseConfigured()) {
-      mockStore.deletePatient(params.id);
+    if (isDbConfigured()) {
+      await query('UPDATE patients SET is_active = false, updated_at = NOW() WHERE id = $1', [params.id]);
       return NextResponse.json({ message: 'Patient deleted' });
     }
 
-    const supabase = getServiceSupabase();
-    const { error } = await supabase
-      .from('patients')
-      .update({ is_active: false, updated_at: new Date().toISOString() })
-      .eq('id', params.id);
-
-    if (error) throw error;
-
+    mockStore.deletePatient(params.id);
     return NextResponse.json({ message: 'Patient deleted' });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

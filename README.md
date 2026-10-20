@@ -1,6 +1,6 @@
 # DentalCare — Clinic Management System 🦷
 
-A full-featured Dental Management System built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, and **Supabase**.
+A full-featured Dental Management System built with **Next.js 14 (App Router)**, **TypeScript**, **Tailwind CSS**, and **Neon PostgreSQL**.
 
 ---
 
@@ -18,42 +18,35 @@ A full-featured Dental Management System built with **Next.js 14 (App Router)**,
 
 ---
 
-## 🚀 Quick Start (Instant Preview Mode)
-
-The system includes a smart fallback data store. You can test and run all features immediately without configuring a database first!
+## 🚀 Quick Start & Database
 
 ### 1. Install Dependencies
 ```bash
 npm install
 ```
 
-### 2. Run the Development Server
+### 2. Configure Environment (`.env.local`)
+```env
+DATABASE_URL="your-neon-postgres-connection-string"
+JWT_SECRET="your-jwt-secret-string"
+```
+
+### 3. Run Database Migrations
+Runs all SQL tables, indexes, triggers, and seed data directly on your Neon database:
+```bash
+npm run db:migrate
+```
+
+### 4. Run the Development Server
 ```bash
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) (or `http://localhost:3001` if port 3000 is occupied).
 
-### 3. Log In
+### 5. Log In
 - **Email**: `admin@dental.com`
 - **Password**: `admin123`
-
----
-
-## 🗄️ Connecting Live Supabase Database (When Ready)
-
-Whenever you are ready to connect your production Supabase database:
-
-1. Create a free project at [Supabase](https://supabase.com).
-2. Open the **SQL Editor** in your Supabase dashboard and run the entire contents of [`supabase/schema.sql`](file:///supabase/schema.sql).
-3. Create a `.env.local` file in the project root:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-   JWT_SECRET=your-random-secure-secret-key-32-chars
-   ```
-4. Restart the server (`npm run dev`). The system will automatically detect the credentials and switch all operations to your live Supabase database!
 
 ---
 
@@ -68,8 +61,6 @@ npm start
 1. Push this project to GitHub.
 2. Import the repository in [Vercel](https://vercel.com).
 3. In Vercel Project Settings > Environment Variables, add:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `DATABASE_URL`
    - `JWT_SECRET`
 4. Click **Deploy**.

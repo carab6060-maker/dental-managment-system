@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServiceSupabase, isSupabaseConfigured } from '@/lib/supabase';
+import { query, isDbConfigured } from '@/lib/db';
 import { mockStore } from '@/lib/mockStore';
 
 export const dynamic = 'force-dynamic';
@@ -9,34 +9,34 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    if (!isSupabaseConfigured()) {
-      const inv = mockStore.getInvoice(params.id);
-      if (!inv) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
-      return NextResponse.json(inv);
+    if (isDbConfigured()) {
+      const invRes = await query(
+        `SELECT 
+          i.*,
+          json_build_object('id', p.id, 'first_name', p.first_name, 'last_name', p.last_name, 'phone', p.phone, 'email', p.email) as patients,
+          COALESCE(
+            (SELECT json_agg(item) FROM invoice_items item WHERE item.invoice_id = i.id),
+            '[]'::json
+          ) as invoice_items
+        FROM invoices i
+        LEFT JOIN patients p ON i.patient_id = p.id
+        WHERE i.id = $1`,
+        [params.id]
+      );
+
+      if (invRes.rows.length === 0) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+
+      const payRes = await query(
+        'SELECT * FROM payments WHERE invoice_id = $1 ORDER BY payment_date DESC',
+        [params.id]
+      );
+
+      return NextResponse.json({ ...invRes.rows[0], payments: payRes.rows || [] });
     }
 
-    const supabase = getServiceSupabase();
-    const { data, error } = await supabase
-      .from('invoices')
-      .select(`
-        *,
-        patients:patient_id (id, first_name, last_name, phone, email),
-        invoice_items (id, description, quantity, unit_price, total, treatment_id),
-        appointments:appointment_id (id, appointment_date, start_time)
-      `)
-      .eq('id', params.id)
-      .single();
-
-    if (error) throw error;
-
-    // Also get payments for this invoice
-    const { data: payments } = await supabase
-      .from('payments')
-      .select('*')
-      .eq('invoice_id', params.id)
-      .order('payment_date', { ascending: false });
-
-    return NextResponse.json({ ...data, payments: payments || [] });
+    const inv = mockStore.getInvoice(params.id);
+    if (!inv) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+    return NextResponse.json(inv);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
@@ -49,25 +49,24 @@ export async function PUT(
   try {
     const body = await request.json();
 
-    if (!isSupabaseConfigured()) {
-      const updated = mockStore.updateInvoice(params.id, body);
-      if (!updated) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
-      return NextResponse.json(updated);
+    if (isDbConfigured()) {
+      const res = await query(
+        `UPDATE invoices SET
+          status = COALESCE($1, status),
+          notes = COALESCE($2, notes),
+          due_date = COALESCE($3, due_date),
+          updated_at = NOW()
+        WHERE id = $4
+        RETURNING *`,
+        [body.status, body.notes, body.due_date, params.id]
+      );
+      if (res.rows.length === 0) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+      return NextResponse.json(res.rows[0]);
     }
 
-    const supabase = getServiceSupabase();
-    body.updated_at = new Date().toISOString();
-
-    const { data, error } = await supabase
-      .from('invoices')
-      .update(body)
-      .eq('id', params.id)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return NextResponse.json(data);
+    const updated = mockStore.updateInvoice(params.id, body);
+    if (!updated) return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+    return NextResponse.json(updated);
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
