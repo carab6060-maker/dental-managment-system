@@ -29,11 +29,6 @@ export default function LoginPage() {
     setLoading(false);
   };
 
-  const fillCredentials = (user: string, pass: string) => {
-    setUsernameOrEmail(user);
-    setPassword(pass);
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
       {/* Background gradient */}
@@ -100,31 +95,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          {/* Quick-fill credentials badge */}
-          <div className="mt-6 p-3.5 rounded-xl bg-slate-800/60 border border-slate-700/60 text-xs">
-            <p className="text-slate-400 font-medium mb-2 text-center">💡 Click to autofill login credentials:</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => fillCredentials('superadmin', 'admin123')}
-                className="p-2 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 text-teal-300 text-left transition-colors"
-              >
-                <div className="font-semibold text-teal-200">👑 Super Admin</div>
-                <div className="text-[11px] text-teal-400/80">User: superadmin</div>
-                <div className="text-[10px] text-slate-400">Pass: admin123</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillCredentials('admin@dental.com', 'admin123')}
-                className="p-2 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-left transition-colors"
-              >
-                <div className="font-semibold text-cyan-200">🏥 Admin Email</div>
-                <div className="text-[11px] text-cyan-400/80">User: admin@dental.com</div>
-                <div className="text-[10px] text-slate-400">Pass: admin123</div>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
