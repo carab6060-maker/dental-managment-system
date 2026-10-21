@@ -103,23 +103,17 @@ export default function Sidebar() {
     >
       {/* Brand Header */}
       <div className="p-5 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 via-indigo-600 to-cyan-400 flex items-center justify-center text-white shadow-lg shadow-blue-500/25 flex-shrink-0">
-          <svg
-            className="w-6 h-6"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 2C8 2 6.5 4.5 6.5 7.5c0 3.5 1.5 8 3 12.5.6 1.8 1.8 1.8 2.5 0 .7 1.8 1.9 1.8 2.5 0 1.5-4.5 3-9 3-12.5C17.5 4.5 16 2 12 2z" />
-          </svg>
+        <div className="w-10 h-10 rounded-xl bg-white p-1 flex items-center justify-center shadow-md shadow-black/20 flex-shrink-0 overflow-hidden">
+          <img
+            src="/logo.jpg"
+            alt="DentalCare Logo"
+            className="w-full h-full object-contain"
+          />
         </div>
         {!collapsed && (
           <div className="animate-fadeIn min-w-0">
             <h1 className="text-lg font-bold text-white tracking-tight truncate">
-              DentalCare SaaS
+              DentalCare
             </h1>
             <p className="text-xs text-blue-200/70 truncate">
               Prime Dental Clinic

@@ -37,24 +37,21 @@ export default function LoginPage() {
         {/* Brand Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-md shadow-blue-500/25">
-              <svg 
-                className="w-6 h-6" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2.2" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              >
-                <path d="M12 2C8 2 6.5 4.5 6.5 7.5c0 3.5 1.5 8 3 12.5.6 1.8 1.8 1.8 2.5 0 .7 1.8 1.9 1.8 2.5 0 1.5-4.5 3-9 3-12.5C17.5 4.5 16 2 12 2z" />
-              </svg>
+            <div className="w-12 h-12 rounded-2xl bg-white border border-slate-100 p-1 flex items-center justify-center shadow-sm flex-shrink-0">
+              <img
+                src="/logo.jpg"
+                alt="DentalCare Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
-            <h1 className="text-2xl font-bold text-[#1E2238] tracking-tight">
-              DentalCare SaaS
-            </h1>
+            <div>
+              <h1 className="text-2xl font-bold text-[#1E2238] tracking-tight">
+                DentalCare
+              </h1>
+              <p className="text-xs text-slate-400 font-medium">Prime Dental Clinic</p>
+            </div>
           </div>
-          <p className="text-slate-500 text-sm mt-2">
+          <p className="text-slate-500 text-sm mt-3">
             Sign in to your dental management account
           </p>
         </div>
