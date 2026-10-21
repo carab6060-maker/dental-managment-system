@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { query, isDbConfigured } from '@/lib/db';
-import { withAuth, JWTPayload } from '@/lib/auth';
+import { withAuth, JWTPayload, getTokenFromRequest, verifyToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
