@@ -4,7 +4,6 @@ import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
-import ClinicSwitcher from '@/components/ClinicSwitcher';
 
 export default function DashboardLayout({
   children,
@@ -58,7 +57,6 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-3">
-            <ClinicSwitcher />
             <div className="text-sm font-semibold text-slate-800">
               {displayName}
             </div>
