@@ -114,80 +114,80 @@ export default function AppointmentsPage() {
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Appointments</h1>
-          <p className="text-slate-400 text-sm mt-1">Schedule and manage appointments</p>
+          <h1 className="text-2xl font-bold text-[#1E2238] tracking-tight">Appointments</h1>
+          <p className="text-slate-500 text-sm mt-1">Schedule and manage patient appointments</p>
         </div>
-        <button onClick={openAddModal} className="px-4 py-2.5 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg font-medium hover:from-teal-500 hover:to-cyan-500 shadow-lg shadow-teal-500/20 flex items-center gap-2">
+        <button onClick={openAddModal} className="px-4 py-2.5 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl font-semibold shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all self-start sm:self-auto">
           <span>+</span> Book Appointment
         </button>
       </div>
 
-      <div className="glass rounded-xl p-4 flex flex-wrap gap-4">
+      <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-wrap gap-4 items-center">
         <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}
-          className="px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm" />
+          className="px-4 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white" />
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm">
+          className="px-4 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl text-slate-800 text-sm focus:bg-white">
           <option value="">All Statuses</option>
           {statuses.map((s) => <option key={s} value={s} className="capitalize">{s}</option>)}
         </select>
         {(dateFilter || statusFilter) && (
-          <button onClick={() => { setDateFilter(''); setStatusFilter(''); }} className="px-3 py-2 text-sm text-teal-400 hover:text-teal-300">Clear filters</button>
+          <button onClick={() => { setDateFilter(''); setStatusFilter(''); }} className="px-3 py-2 text-sm text-blue-600 hover:text-blue-700 font-medium">Clear filters</button>
         )}
       </div>
 
-      <div className="glass rounded-xl overflow-hidden">
+      <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
         {loading ? (
           <div className="flex items-center justify-center h-48"><div className="spinner" /></div>
         ) : appointments.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-slate-500">
+          <div className="flex flex-col items-center justify-center h-48 text-slate-400">
             <span className="text-4xl mb-2">📅</span><p>No appointments found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-700">
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase">Patient</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase">Doctor</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase">Treatment</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase">Date & Time</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase">Status</th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold text-slate-400 uppercase">Actions</th>
+                <tr className="bg-slate-50/80 border-b border-slate-200/80">
+                  <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Patient</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Doctor</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Treatment</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Date & Time</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
+                  <th className="px-5 py-3.5 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {appointments.map((apt) => (
-                  <tr key={apt.id} className="border-b border-slate-800 table-row-hover">
+                  <tr key={apt.id} className="border-b border-slate-100 hover:bg-slate-50/70 transition-colors">
                     <td className="px-5 py-4">
-                      <p className="text-sm font-medium text-white">
+                      <p className="text-sm font-semibold text-slate-800">
                         {apt.patients?.first_name} {apt.patients?.last_name}
                       </p>
                       <p className="text-xs text-slate-400">{apt.patients?.phone}</p>
                     </td>
                     <td className="px-5 py-4">
-                      <p className="text-sm text-white">Dr. {apt.doctors?.first_name} {apt.doctors?.last_name}</p>
+                      <p className="text-sm font-medium text-slate-800">Dr. {apt.doctors?.first_name} {apt.doctors?.last_name}</p>
                       <p className="text-xs text-slate-400">{apt.doctors?.specialization}</p>
                     </td>
-                    <td className="px-5 py-4 text-sm text-slate-300">{apt.treatments?.name || '—'}</td>
+                    <td className="px-5 py-4 text-sm text-slate-600">{apt.treatments?.name || '—'}</td>
                     <td className="px-5 py-4">
-                      <p className="text-sm text-white">{new Date(apt.appointment_date).toLocaleDateString()}</p>
+                      <p className="text-sm font-medium text-slate-800">{new Date(apt.appointment_date).toLocaleDateString()}</p>
                       <p className="text-xs text-slate-400">{apt.start_time?.slice(0, 5)}{apt.end_time ? ` - ${apt.end_time.slice(0, 5)}` : ''}</p>
                     </td>
                     <td className="px-5 py-4">
                       <select
                         value={apt.status}
                         onChange={(e) => updateStatus(apt.id, e.target.value)}
-                        className={`badge status-${apt.status} bg-transparent border-0 cursor-pointer text-xs px-0`}
+                        className={`badge status-${apt.status} cursor-pointer text-xs`}
                       >
                         {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <button onClick={() => openEditModal(apt)} className="px-3 py-1.5 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded-md mr-2">Edit</button>
+                      <button onClick={() => openEditModal(apt)} className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors mr-2">Edit</button>
                       {apt.status !== 'cancelled' && (
-                        <button onClick={() => handleCancel(apt.id)} className="px-3 py-1.5 text-xs bg-red-900/30 hover:bg-red-800/40 text-red-400 rounded-md">Cancel</button>
+                        <button onClick={() => handleCancel(apt.id)} className="px-3 py-1.5 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition-colors">Cancel</button>
                       )}
                     </td>
                   </tr>
@@ -201,63 +201,63 @@ export default function AppointmentsPage() {
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingApt ? 'Edit Appointment' : 'Book Appointment'} size="md">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Patient *</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Patient *</label>
             <select required value={form.patient_id} onChange={(e) => updateForm('patient_id', e.target.value)}
-              className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm">
+              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15">
               <option value="">Select Patient</option>
               {patients.map((p) => <option key={p.id} value={p.id}>{p.first_name} {p.last_name} - {p.phone}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Doctor *</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Doctor *</label>
             <select required value={form.doctor_id} onChange={(e) => updateForm('doctor_id', e.target.value)}
-              className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm">
+              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15">
               <option value="">Select Doctor</option>
               {doctors.map((d) => <option key={d.id} value={d.id}>Dr. {d.first_name} {d.last_name} - {d.specialization}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Treatment</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Treatment</label>
             <select value={form.treatment_id} onChange={(e) => updateForm('treatment_id', e.target.value)}
-              className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm">
+              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15">
               <option value="">Select Treatment (optional)</option>
               {treatments.map((t) => <option key={t.id} value={t.id}>{t.name} - ${t.cost}</option>)}
             </select>
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Date *</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Date *</label>
               <input type="date" required value={form.appointment_date} onChange={(e) => updateForm('appointment_date', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm" />
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Start Time *</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Start Time *</label>
               <input type="time" required value={form.start_time} onChange={(e) => updateForm('start_time', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm" />
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">End Time</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">End Time</label>
               <input type="time" value={form.end_time} onChange={(e) => updateForm('end_time', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm" />
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15" />
             </div>
           </div>
           {editingApt && (
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Status</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Status</label>
               <select value={form.status} onChange={(e) => updateForm('status', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm">
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15">
                 {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-1">Notes</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Notes</label>
             <textarea value={form.notes} rows={2} onChange={(e) => updateForm('notes', e.target.value)}
-              className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm" />
+              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15" />
           </div>
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-700">
-            <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm">Cancel</button>
-            <button type="submit" disabled={saving} className="px-6 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+            <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition-colors">Cancel</button>
+            <button type="submit" disabled={saving} className="px-6 py-2.5 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 disabled:opacity-50 transition-all">
               {saving ? 'Saving...' : editingApt ? 'Update' : 'Book Appointment'}
             </button>
           </div>

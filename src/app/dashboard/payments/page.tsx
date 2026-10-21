@@ -180,8 +180,8 @@ export default function PaymentsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Payments & Receipts</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold text-[#1E2238] tracking-tight">Payments & Receipts</h1>
+          <p className="text-sm text-slate-500 mt-1">
             Track patient transactions, payment methods, and revenue flow
           </p>
         </div>
@@ -193,52 +193,52 @@ export default function PaymentsPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 border-l-4 border-l-emerald-500">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm font-medium">Total Revenue</span>
-            <span className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-lg">
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Revenue</span>
+            <span className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
               💰
             </span>
           </div>
-          <p className="text-2xl font-bold text-emerald-400 mt-3">
+          <p className="text-2xl font-extrabold text-emerald-600 mt-3">
             ${totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
-          <p className="text-xs text-slate-500 mt-1">Across all transactions</p>
+          <p className="text-xs text-slate-400 mt-1">Across all transactions</p>
         </div>
 
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 border-l-4 border-l-[#1E2238]">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm font-medium">Total Transactions</span>
-            <span className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-lg">
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Transactions</span>
+            <span className="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-sm">
               🔢
             </span>
           </div>
-          <p className="text-2xl font-bold text-white mt-3">{payments.length}</p>
-          <p className="text-xs text-slate-500 mt-1">Processed payments</p>
+          <p className="text-2xl font-extrabold text-[#1E2238] mt-3">{payments.length}</p>
+          <p className="text-xs text-slate-400 mt-1">Processed payments</p>
         </div>
 
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 border-l-4 border-l-blue-600">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm font-medium">Average Payment</span>
-            <span className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-lg">
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Average Payment</span>
+            <span className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-sm">
               📊
             </span>
           </div>
-          <p className="text-2xl font-bold text-white mt-3">
+          <p className="text-2xl font-extrabold text-[#1E2238] mt-3">
             ${avgAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
-          <p className="text-xs text-slate-500 mt-1">Per transaction average</p>
+          <p className="text-xs text-slate-400 mt-1">Per transaction average</p>
         </div>
 
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 border-l-4 border-l-amber-500">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm font-medium">Invoices with Due</span>
-            <span className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-lg">
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Invoices with Due</span>
+            <span className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
               ⏳
             </span>
           </div>
-          <p className="text-2xl font-bold text-amber-400 mt-3">{invoicesWithBalance.length}</p>
-          <p className="text-xs text-slate-500 mt-1">Awaiting completion</p>
+          <p className="text-2xl font-extrabold text-amber-600 mt-3">{invoicesWithBalance.length}</p>
+          <p className="text-xs text-slate-400 mt-1">Awaiting completion</p>
         </div>
       </div>
 
@@ -273,8 +273,8 @@ export default function PaymentsPage() {
       {/* Payments Table */}
       <div className="glass-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-900/60 text-xs uppercase text-slate-400 border-b border-slate-800">
+          <table className="w-full text-left text-sm text-slate-800">
+            <thead className="bg-slate-50/80 text-xs uppercase font-bold text-slate-400 border-b border-slate-200/80">
               <tr>
                 <th className="px-5 py-3.5">Date</th>
                 <th className="px-5 py-3.5">Invoice #</th>

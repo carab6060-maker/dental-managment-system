@@ -295,8 +295,8 @@ export default function BillingPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Billing & Invoices</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold text-[#1E2238] tracking-tight">Billing & Invoices</h1>
+          <p className="text-sm text-slate-500 mt-1">
             Manage patient billing, invoices, payments, and balances
           </p>
         </div>
@@ -308,50 +308,50 @@ export default function BillingPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 border-l-4 border-l-[#1E2238]">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm font-medium">Total Invoiced</span>
-            <span className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-lg">
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Invoiced</span>
+            <span className="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center text-sm">
               📄
             </span>
           </div>
-          <p className="text-2xl font-bold text-white mt-3">${totalInvoiced.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          <p className="text-xs text-slate-500 mt-1">{invoices.length} total invoices issued</p>
+          <p className="text-2xl font-extrabold text-[#1E2238] mt-3">${totalInvoiced.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <p className="text-xs text-slate-400 mt-1">{invoices.length} total invoices issued</p>
         </div>
 
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 border-l-4 border-l-emerald-500">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm font-medium">Total Collected</span>
-            <span className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-lg">
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Collected</span>
+            <span className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm">
               💰
             </span>
           </div>
-          <p className="text-2xl font-bold text-emerald-400 mt-3">${totalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-2xl font-extrabold text-emerald-600 mt-3">${totalPaid.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <p className="text-xs text-slate-400 mt-1">
             {totalInvoiced > 0 ? `${((totalPaid / totalInvoiced) * 100).toFixed(1)}% recovery rate` : '0%'}
           </p>
         </div>
 
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 border-l-4 border-l-amber-500">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm font-medium">Outstanding Balance</span>
-            <span className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-lg">
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Outstanding Balance</span>
+            <span className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-sm">
               ⏳
             </span>
           </div>
-          <p className="text-2xl font-bold text-amber-400 mt-3">${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          <p className="text-xs text-slate-500 mt-1">Pending collection</p>
+          <p className="text-2xl font-extrabold text-amber-600 mt-3">${totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <p className="text-xs text-slate-400 mt-1">Pending collection</p>
         </div>
 
-        <div className="glass-card p-5">
+        <div className="glass-card p-5 border-l-4 border-l-blue-600">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm font-medium">Unpaid Invoices</span>
-            <span className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-lg">
+            <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">Unpaid Invoices</span>
+            <span className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-sm">
               ⚠️
             </span>
           </div>
-          <p className="text-2xl font-bold text-white mt-3">{unpaidCount}</p>
-          <p className="text-xs text-slate-500 mt-1">Require follow-up</p>
+          <p className="text-2xl font-extrabold text-[#1E2238] mt-3">{unpaidCount}</p>
+          <p className="text-xs text-slate-400 mt-1">Require follow-up</p>
         </div>
       </div>
 
@@ -385,8 +385,8 @@ export default function BillingPage() {
       {/* Invoices Table */}
       <div className="glass-card overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-900/60 text-xs uppercase text-slate-400 border-b border-slate-800">
+          <table className="w-full text-left text-sm text-slate-800">
+            <thead className="bg-slate-50/80 text-xs uppercase font-bold text-slate-400 border-b border-slate-200/80">
               <tr>
                 <th className="px-5 py-3.5">Invoice #</th>
                 <th className="px-5 py-3.5">Patient</th>
@@ -398,20 +398,20 @@ export default function BillingPage() {
                 <th className="px-5 py-3.5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800">
+            <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-5 py-12 text-center text-slate-500">
-                    <div className="inline-block animate-spin text-2xl mb-2">🌀</div>
+                  <td colSpan={8} className="px-5 py-12 text-center text-slate-400">
+                    <div className="spinner mx-auto mb-2" />
                     <p>Loading invoices...</p>
                   </td>
                 </tr>
               ) : filteredInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-5 py-12 text-center text-slate-500">
+                  <td colSpan={8} className="px-5 py-12 text-center text-slate-400">
                     <span className="text-3xl block mb-2">🧾</span>
-                    <p className="text-base font-medium text-slate-400">No invoices found</p>
-                    <p className="text-xs text-slate-600 mt-1">
+                    <p className="text-base font-semibold text-slate-700">No invoices found</p>
+                    <p className="text-xs text-slate-500 mt-1">
                       {searchQuery || statusFilter
                         ? 'Try adjusting your filters'
                         : 'Create your first invoice to get started'}
@@ -420,29 +420,29 @@ export default function BillingPage() {
                 </tr>
               ) : (
                 filteredInvoices.map((inv) => (
-                  <tr key={inv.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="px-5 py-4 font-mono font-medium text-teal-400">
+                  <tr key={inv.id} className="hover:bg-slate-50/70 transition-colors">
+                    <td className="px-5 py-4 font-mono font-semibold text-blue-600">
                       {inv.invoice_number || `INV-${inv.id.slice(0, 6)}`}
                     </td>
                     <td className="px-5 py-4">
                       {inv.patients ? (
                         <div>
-                          <p className="font-medium text-white">
+                          <p className="font-semibold text-slate-800">
                             {inv.patients.first_name} {inv.patients.last_name}
                           </p>
-                          <p className="text-xs text-slate-500">{inv.patients.phone}</p>
+                          <p className="text-xs text-slate-400">{inv.patients.phone}</p>
                         </div>
                       ) : (
-                        <span className="text-slate-500 italic">Unknown</span>
+                        <span className="text-slate-400 italic">Unknown</span>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-xs text-slate-400">
+                    <td className="px-5 py-4 text-xs text-slate-500">
                       {new Date(inv.created_at).toLocaleDateString()}
                     </td>
-                    <td className="px-5 py-4 font-semibold text-white">
+                    <td className="px-5 py-4 font-semibold text-slate-900">
                       ${Number(inv.total).toFixed(2)}
                     </td>
-                    <td className="px-5 py-4 text-emerald-400 font-medium">
+                    <td className="px-5 py-4 text-emerald-600 font-semibold">
                       ${Number(inv.amount_paid || 0).toFixed(2)}
                     </td>
                     <td className="px-5 py-4">

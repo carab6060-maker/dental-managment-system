@@ -23,19 +23,19 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div
-        className={`${sizeClasses[size]} w-full mx-4 bg-slate-800 rounded-xl border border-slate-700 shadow-2xl animate-fadeIn max-h-[90vh] flex flex-col`}
+        className={`${sizeClasses[size]} w-full mx-4 bg-white rounded-2xl border border-slate-200 shadow-2xl animate-fadeIn max-h-[90vh] flex flex-col text-slate-900 overflow-hidden`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-5 border-b border-slate-700">
-          <h2 className="text-xl font-semibold text-white">{title}</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+          <h2 className="text-lg font-bold text-[#1E2238] tracking-tight">{title}</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white"
+            className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-200/60 text-slate-400 hover:text-slate-700 transition-colors"
           >
             ✕
           </button>
         </div>
-        <div className="p-5 overflow-y-auto flex-1">
+        <div className="p-6 overflow-y-auto flex-1">
           {children}
         </div>
       </div>

@@ -137,38 +137,38 @@ export default function PatientsPage() {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Patients</h1>
-          <p className="text-slate-400 text-sm mt-1">Manage your patient records</p>
+          <h1 className="text-2xl font-bold text-[#1E2238] tracking-tight">Patients</h1>
+          <p className="text-slate-500 text-sm mt-1">Manage and track your patient records</p>
         </div>
         <button
           onClick={openAddModal}
-          className="px-4 py-2.5 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg font-medium hover:from-teal-500 hover:to-cyan-500 shadow-lg shadow-teal-500/20 flex items-center gap-2"
+          className="px-4 py-2.5 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl font-semibold shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all self-start sm:self-auto"
         >
           <span>+</span> Add Patient
         </button>
       </div>
 
       {/* Search */}
-      <div className="glass rounded-xl p-4">
+      <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
         <input
           type="text"
           placeholder="Search patients by name, phone, or email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full px-4 py-2.5 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-500"
+          className="w-full px-4 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:bg-white text-sm"
         />
       </div>
 
       {/* Table */}
-      <div className="glass rounded-xl overflow-hidden">
+      <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
         {loading ? (
           <div className="flex items-center justify-center h-48">
             <div className="spinner" />
           </div>
         ) : patients.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-slate-500">
+          <div className="flex flex-col items-center justify-center h-48 text-slate-400">
             <span className="text-4xl mb-2">👥</span>
             <p>No patients found</p>
           </div>
@@ -176,45 +176,45 @@ export default function PatientsPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-700">
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase">Patient</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase">Contact</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase">Gender</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase">DOB</th>
-                  <th className="px-5 py-3 text-left text-xs font-semibold text-slate-400 uppercase">Insurance</th>
-                  <th className="px-5 py-3 text-right text-xs font-semibold text-slate-400 uppercase">Actions</th>
+                <tr className="bg-slate-50/80 border-b border-slate-200/80">
+                  <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Patient</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Contact</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Gender</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">DOB</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Insurance</th>
+                  <th className="px-5 py-3.5 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {patients.map((patient) => (
-                  <tr key={patient.id} className="border-b border-slate-800 table-row-hover">
+                  <tr key={patient.id} className="border-b border-slate-100 hover:bg-slate-50/70 transition-colors">
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-teal-600/20 flex items-center justify-center text-teal-400 font-semibold text-sm">
+                        <div className="w-9 h-9 rounded-full bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-600 font-bold text-sm">
                           {patient.first_name[0]}{patient.last_name[0]}
                         </div>
-                        <span className="text-sm font-medium text-white">{patient.first_name} {patient.last_name}</span>
+                        <span className="text-sm font-semibold text-slate-800">{patient.first_name} {patient.last_name}</span>
                       </div>
                     </td>
                     <td className="px-5 py-4">
-                      <p className="text-sm text-white">{patient.phone}</p>
-                      <p className="text-xs text-slate-400">{patient.email}</p>
+                      <p className="text-sm font-medium text-slate-800">{patient.phone}</p>
+                      <p className="text-xs text-slate-400">{patient.email || '—'}</p>
                     </td>
-                    <td className="px-5 py-4 text-sm text-slate-300 capitalize">{patient.gender || '—'}</td>
-                    <td className="px-5 py-4 text-sm text-slate-300">
+                    <td className="px-5 py-4 text-sm text-slate-600 capitalize">{patient.gender || '—'}</td>
+                    <td className="px-5 py-4 text-sm text-slate-600">
                       {patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString() : '—'}
                     </td>
-                    <td className="px-5 py-4 text-sm text-slate-300">{patient.insurance_provider || '—'}</td>
+                    <td className="px-5 py-4 text-sm text-slate-600">{patient.insurance_provider || '—'}</td>
                     <td className="px-5 py-4 text-right">
                       <button
                         onClick={() => openEditModal(patient)}
-                        className="px-3 py-1.5 text-xs bg-slate-700 hover:bg-slate-600 text-white rounded-md mr-2"
+                        className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors mr-2"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(patient.id)}
-                        className="px-3 py-1.5 text-xs bg-red-900/30 hover:bg-red-800/40 text-red-400 rounded-md"
+                        className="px-3 py-1.5 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition-colors"
                       >
                         Delete
                       </button>
@@ -237,51 +237,51 @@ export default function PatientsPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">First Name *</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">First Name *</label>
               <input
                 type="text" required value={form.first_name}
                 onChange={(e) => updateForm('first_name', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Last Name *</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Last Name *</label>
               <input
                 type="text" required value={form.last_name}
                 onChange={(e) => updateForm('last_name', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Phone *</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Phone *</label>
               <input
                 type="tel" required value={form.phone}
                 onChange={(e) => updateForm('phone', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Email</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
               <input
                 type="email" value={form.email}
                 onChange={(e) => updateForm('email', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Date of Birth</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Date of Birth</label>
               <input
                 type="date" value={form.date_of_birth}
                 onChange={(e) => updateForm('date_of_birth', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Gender</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Gender</label>
               <select
                 value={form.gender}
                 onChange={(e) => updateForm('gender', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               >
                 <option value="male">Male</option>
                 <option value="female">Female</option>
@@ -289,11 +289,11 @@ export default function PatientsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Blood Group</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Blood Group</label>
               <select
                 value={form.blood_group}
                 onChange={(e) => updateForm('blood_group', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               >
                 <option value="">Select</option>
                 <option value="A+">A+</option><option value="A-">A-</option>
@@ -303,91 +303,91 @@ export default function PatientsPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">City</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">City</label>
               <input
                 type="text" value={form.city}
                 onChange={(e) => updateForm('city', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-300 mb-1">Address</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Address</label>
               <input
                 type="text" value={form.address}
                 onChange={(e) => updateForm('address', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Emergency Contact Name</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Emergency Contact Name</label>
               <input
                 type="text" value={form.emergency_contact_name}
                 onChange={(e) => updateForm('emergency_contact_name', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Emergency Contact Phone</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Emergency Contact Phone</label>
               <input
                 type="tel" value={form.emergency_contact_phone}
                 onChange={(e) => updateForm('emergency_contact_phone', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Insurance Provider</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Insurance Provider</label>
               <input
                 type="text" value={form.insurance_provider}
                 onChange={(e) => updateForm('insurance_provider', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Insurance Number</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Insurance Number</label>
               <input
                 type="text" value={form.insurance_number}
                 onChange={(e) => updateForm('insurance_number', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-300 mb-1">Allergies</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Allergies</label>
               <textarea
                 value={form.allergies} rows={2}
                 onChange={(e) => updateForm('allergies', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-300 mb-1">Medical History</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Medical History</label>
               <textarea
                 value={form.medical_history} rows={2}
                 onChange={(e) => updateForm('medical_history', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-slate-300 mb-1">Notes</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Notes</label>
               <textarea
                 value={form.notes} rows={2}
                 onChange={(e) => updateForm('notes', e.target.value)}
-                className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm"
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-700">
+          <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
             <button
               type="button"
               onClick={() => setShowModal(false)}
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm"
+              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2 bg-gradient-to-r from-teal-600 to-cyan-600 text-white rounded-lg text-sm font-medium hover:from-teal-500 hover:to-cyan-500 disabled:opacity-50"
+              className="px-6 py-2.5 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 disabled:opacity-50 transition-all"
             >
               {saving ? 'Saving...' : editingPatient ? 'Update Patient' : 'Add Patient'}
             </button>

@@ -117,8 +117,8 @@ export default function ReportsPage() {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Reports & Clinical Analytics</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold text-[#1E2238] tracking-tight">Reports & Clinical Analytics</h1>
+          <p className="text-xs text-slate-500 mt-1">
             Performance metrics, revenue streams, appointment trends, and procedure insights
           </p>
         </div>
@@ -126,7 +126,7 @@ export default function ReportsPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => window.print()}
-            className="btn-secondary text-xs flex items-center gap-2"
+            className="btn-secondary text-xs flex items-center gap-2 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 shadow-xs"
           >
             <span>🖨️</span>
             <span>Print Report</span>
@@ -135,9 +135,9 @@ export default function ReportsPage() {
       </div>
 
       {/* Date Range Selector */}
-      <div className="glass-card p-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs font-semibold text-slate-400 mr-2 uppercase">Period:</span>
+          <span className="text-xs font-bold text-slate-400 mr-2 uppercase tracking-wider">Period:</span>
           {(
             [
               { id: '7d', label: 'Last 7 Days' },
@@ -150,10 +150,10 @@ export default function ReportsPage() {
             <button
               key={t.id}
               onClick={() => setDateRange(t.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                 dateRange === t.id
-                  ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                  ? 'bg-[#2563EB] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               {t.label}
@@ -169,7 +169,7 @@ export default function ReportsPage() {
               onChange={(e) => setCustomFrom(e.target.value)}
               className="input-field py-1 text-xs"
             />
-            <span className="text-slate-500">to</span>
+            <span className="text-slate-400 font-medium">to</span>
             <input
               type="date"
               value={customTo}
@@ -182,63 +182,63 @@ export default function ReportsPage() {
 
       {/* Primary KPI Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="glass-card p-5">
+        <div className="bg-white rounded-2xl p-5 border border-slate-100 border-l-4 border-l-[#10B981] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm font-medium">Period Revenue</span>
-            <span className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-lg">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Period Revenue</span>
+            <span className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base">
               💵
             </span>
           </div>
-          <p className="text-2xl font-bold text-emerald-400 mt-3">
+          <p className="text-2xl font-bold text-[#1E2238] mt-2">
             ${totalRev.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
-          <p className="text-xs text-slate-500 mt-1">{revenueData?.paymentCount || 0} transactions</p>
+          <p className="text-xs text-slate-400 mt-1">{revenueData?.paymentCount || 0} transactions</p>
         </div>
 
-        <div className="glass-card p-5">
+        <div className="bg-white rounded-2xl p-5 border border-slate-100 border-l-4 border-l-[#2563EB] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm font-medium">Appointments Booked</span>
-            <span className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-lg">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Appointments Booked</span>
+            <span className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-base">
               📅
             </span>
           </div>
-          <p className="text-2xl font-bold text-white mt-3">{totalApts}</p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-2xl font-bold text-[#1E2238] mt-2">{totalApts}</p>
+          <p className="text-xs text-slate-400 mt-1">
             {appointmentData?.statusBreakdown?.completed || 0} completed
           </p>
         </div>
 
-        <div className="glass-card p-5">
+        <div className="bg-white rounded-2xl p-5 border border-slate-100 border-l-4 border-l-[#8B5CF6] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm font-medium">New Patients</span>
-            <span className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-lg">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">New Patients</span>
+            <span className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-base">
               👥
             </span>
           </div>
-          <p className="text-2xl font-bold text-white mt-3">{newPatients}</p>
-          <p className="text-xs text-slate-500 mt-1">Registered in range</p>
+          <p className="text-2xl font-bold text-[#1E2238] mt-2">{newPatients}</p>
+          <p className="text-xs text-slate-400 mt-1">Registered in range</p>
         </div>
 
-        <div className="glass-card p-5">
+        <div className="bg-white rounded-2xl p-5 border border-slate-100 border-l-4 border-l-[#F59E0B] shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
           <div className="flex items-center justify-between">
-            <span className="text-slate-400 text-sm font-medium">Procedures Performed</span>
-            <span className="w-10 h-10 rounded-xl bg-teal-500/10 text-teal-400 flex items-center justify-center text-lg">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Procedures Performed</span>
+            <span className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base">
               🩺
             </span>
           </div>
-          <p className="text-2xl font-bold text-teal-400 mt-3">{completedTreatments}</p>
-          <p className="text-xs text-slate-500 mt-1">Finished treatments</p>
+          <p className="text-2xl font-bold text-[#1E2238] mt-2">{completedTreatments}</p>
+          <p className="text-xs text-slate-400 mt-1">Finished treatments</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-slate-800 flex gap-4 text-sm font-medium">
+      <div className="border-b border-slate-200 flex gap-6 text-sm font-semibold">
         <button
           onClick={() => setActiveTab('overview')}
           className={`pb-3 transition-colors ${
             activeTab === 'overview'
-              ? 'text-teal-400 border-b-2 border-teal-400'
-              : 'text-slate-400 hover:text-white'
+              ? 'text-[#2563EB] border-b-2 border-[#2563EB] font-bold'
+              : 'text-slate-500 hover:text-slate-800'
           }`}
         >
           📊 Overview
@@ -247,8 +247,8 @@ export default function ReportsPage() {
           onClick={() => setActiveTab('revenue')}
           className={`pb-3 transition-colors ${
             activeTab === 'revenue'
-              ? 'text-teal-400 border-b-2 border-teal-400'
-              : 'text-slate-400 hover:text-white'
+              ? 'text-[#2563EB] border-b-2 border-[#2563EB] font-bold'
+              : 'text-slate-500 hover:text-slate-800'
           }`}
         >
           💰 Revenue & Payments
@@ -257,8 +257,8 @@ export default function ReportsPage() {
           onClick={() => setActiveTab('appointments')}
           className={`pb-3 transition-colors ${
             activeTab === 'appointments'
-              ? 'text-teal-400 border-b-2 border-teal-400'
-              : 'text-slate-400 hover:text-white'
+              ? 'text-[#2563EB] border-b-2 border-[#2563EB] font-bold'
+              : 'text-slate-500 hover:text-slate-800'
           }`}
         >
           📅 Appointments & Doctors
@@ -267,8 +267,8 @@ export default function ReportsPage() {
           onClick={() => setActiveTab('treatments')}
           className={`pb-3 transition-colors ${
             activeTab === 'treatments'
-              ? 'text-teal-400 border-b-2 border-teal-400'
-              : 'text-slate-400 hover:text-white'
+              ? 'text-[#2563EB] border-b-2 border-[#2563EB] font-bold'
+              : 'text-slate-500 hover:text-slate-800'
           }`}
         >
           💊 Procedure Performance
@@ -276,9 +276,9 @@ export default function ReportsPage() {
       </div>
 
       {loading ? (
-        <div className="glass-card p-12 text-center text-slate-500">
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-12 text-center text-slate-500">
           <div className="inline-block animate-spin text-3xl mb-3">🌀</div>
-          <p>Analyzing metrics and generating reports...</p>
+          <p className="text-sm font-medium">Analyzing metrics and generating reports...</p>
         </div>
       ) : (
         <>
@@ -286,25 +286,25 @@ export default function ReportsPage() {
           {activeTab === 'overview' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Revenue by Method */}
-              <div className="glass-card p-5 space-y-4">
-                <h3 className="text-base font-semibold text-white flex items-center gap-2">
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-5 space-y-4">
+                <h3 className="text-base font-bold text-[#1E2238] flex items-center gap-2">
                   <span>💳</span> Payment Method Breakdown
                 </h3>
                 {methods.length === 0 ? (
-                  <p className="text-sm text-slate-500 py-6 text-center">No payment data recorded in this period</p>
+                  <p className="text-sm text-slate-400 py-6 text-center">No payment data recorded in this period</p>
                 ) : (
                   <div className="space-y-3">
                     {methods.map((m) => (
                       <div key={m.method} className="space-y-1">
                         <div className="flex justify-between text-xs">
-                          <span className="capitalize font-medium text-slate-300">{m.method}</span>
-                          <span className="text-emerald-400 font-semibold">
+                          <span className="capitalize font-semibold text-slate-700">{m.method}</span>
+                          <span className="text-emerald-600 font-bold">
                             ${m.amount.toFixed(2)} ({m.pct.toFixed(1)}%)
                           </span>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                        <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-teal-500 to-emerald-400 rounded-full"
+                            className="h-full bg-emerald-500 rounded-full"
                             style={{ width: `${Math.min(100, m.pct)}%` }}
                           />
                         </div>
@@ -315,29 +315,29 @@ export default function ReportsPage() {
               </div>
 
               {/* Appointment Status Distribution */}
-              <div className="glass-card p-5 space-y-4">
-                <h3 className="text-base font-semibold text-white flex items-center gap-2">
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-5 space-y-4">
+                <h3 className="text-base font-bold text-[#1E2238] flex items-center gap-2">
                   <span>📊</span> Appointment Status Distribution
                 </h3>
                 {statuses.length === 0 ? (
-                  <p className="text-sm text-slate-500 py-6 text-center">No appointments in this range</p>
+                  <p className="text-sm text-slate-400 py-6 text-center">No appointments in this range</p>
                 ) : (
                   <div className="space-y-3">
                     {statuses.map((s) => (
                       <div key={s.status} className="space-y-1">
                         <div className="flex justify-between text-xs">
-                          <span className="capitalize font-medium text-slate-300">{s.status}</span>
-                          <span className="text-white font-semibold">
+                          <span className="capitalize font-semibold text-slate-700">{s.status}</span>
+                          <span className="text-[#1E2238] font-bold">
                             {s.count} visits ({s.pct.toFixed(1)}%)
                           </span>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                        <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
                           <div
                             className={`h-full rounded-full ${
                               s.status === 'completed'
                                 ? 'bg-emerald-500'
                                 : s.status === 'scheduled'
-                                ? 'bg-blue-500'
+                                ? 'bg-[#2563EB]'
                                 : s.status === 'cancelled'
                                 ? 'bg-red-500'
                                 : 'bg-amber-500'
@@ -352,28 +352,28 @@ export default function ReportsPage() {
               </div>
 
               {/* Top Treatments by Revenue */}
-              <div className="glass-card p-5 space-y-4 lg:col-span-2">
-                <h3 className="text-base font-semibold text-white flex items-center gap-2">
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-5 space-y-4 lg:col-span-2">
+                <h3 className="text-base font-bold text-[#1E2238] flex items-center gap-2">
                   <span>🏆</span> Top Revenue Generating Treatments
                 </h3>
                 {treatments.length === 0 ? (
-                  <p className="text-sm text-slate-500 py-6 text-center">No completed treatments recorded</p>
+                  <p className="text-sm text-slate-400 py-6 text-center">No completed treatments recorded</p>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs text-slate-300">
-                      <thead className="text-slate-400 border-b border-slate-800">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50/75 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                         <tr>
-                          <th className="py-2.5">Procedure</th>
-                          <th className="py-2.5 text-center">Completed Visits</th>
-                          <th className="py-2.5 text-right">Revenue Generated</th>
+                          <th className="px-4 py-3">Procedure</th>
+                          <th className="px-4 py-3 text-center">Completed Visits</th>
+                          <th className="px-4 py-3 text-right">Revenue Generated</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800">
+                      <tbody className="divide-y divide-slate-100">
                         {treatments.slice(0, 5).map((t, idx) => (
-                          <tr key={idx} className="hover:bg-slate-800/30">
-                            <td className="py-2.5 font-medium text-white">{t.name}</td>
-                            <td className="py-2.5 text-center">{t.count}</td>
-                            <td className="py-2.5 text-right font-bold text-emerald-400">
+                          <tr key={idx} className="hover:bg-slate-50/60">
+                            <td className="px-4 py-3 font-semibold text-[#1E2238]">{t.name}</td>
+                            <td className="px-4 py-3 text-center text-slate-600 font-medium">{t.count}</td>
+                            <td className="px-4 py-3 text-right font-bold text-emerald-600">
                               ${t.revenue.toFixed(2)}
                             </td>
                           </tr>
@@ -389,11 +389,11 @@ export default function ReportsPage() {
           {/* TAB 2: REVENUE & PAYMENTS */}
           {activeTab === 'revenue' && (
             <div className="space-y-6">
-              <div className="glass-card p-5">
-                <h3 className="text-base font-semibold text-white mb-4">Detailed Payment Receipts</h3>
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-5">
+                <h3 className="text-base font-bold text-[#1E2238] mb-4">Detailed Payment Receipts</h3>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-300">
-                    <thead className="bg-slate-900/60 uppercase text-slate-400 border-b border-slate-800">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50/75 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                       <tr>
                         <th className="px-4 py-3">Date</th>
                         <th className="px-4 py-3">Invoice #</th>
@@ -403,34 +403,34 @@ export default function ReportsPage() {
                         <th className="px-4 py-3 text-right">Amount</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800">
+                    <tbody className="divide-y divide-slate-100">
                       {revenueData?.payments?.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                          <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
                             No payment transactions recorded in this period
                           </td>
                         </tr>
                       ) : (
                         revenueData?.payments?.map((p: any) => (
-                          <tr key={p.id} className="hover:bg-slate-800/40">
-                            <td className="px-4 py-3 text-slate-400">
+                          <tr key={p.id} className="hover:bg-slate-50/60">
+                            <td className="px-4 py-3 text-slate-500 font-medium">
                               {new Date(p.payment_date).toLocaleDateString()}
                             </td>
-                            <td className="px-4 py-3 font-mono text-teal-400">
+                            <td className="px-4 py-3 font-mono font-bold text-[#2563EB]">
                               {p.invoices?.invoice_number || `INV-${p.invoice_id?.slice(0, 6)}`}
                             </td>
-                            <td className="px-4 py-3 text-white">
+                            <td className="px-4 py-3 font-semibold text-[#1E2238]">
                               {p.patients
                                 ? `${p.patients.first_name} ${p.patients.last_name}`
                                 : 'Patient'}
                             </td>
-                            <td className="px-4 py-3 capitalize text-slate-300">
+                            <td className="px-4 py-3 capitalize text-slate-600 font-medium">
                               {p.payment_method?.replace('_', ' ')}
                             </td>
                             <td className="px-4 py-3 font-mono text-slate-400">
                               {p.reference_number || '—'}
                             </td>
-                            <td className="px-4 py-3 text-right font-bold text-emerald-400">
+                            <td className="px-4 py-3 text-right font-bold text-emerald-600">
                               ${Number(p.amount).toFixed(2)}
                             </td>
                           </tr>
@@ -447,21 +447,21 @@ export default function ReportsPage() {
           {activeTab === 'appointments' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Doctor Caseload */}
-              <div className="glass-card p-5 space-y-4">
-                <h3 className="text-base font-semibold text-white">Doctor Workload & Caseload</h3>
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-5 space-y-4">
+                <h3 className="text-base font-bold text-[#1E2238]">Doctor Workload & Caseload</h3>
                 {doctors.length === 0 ? (
-                  <p className="text-sm text-slate-500 py-6 text-center">No doctor appointments found</p>
+                  <p className="text-sm text-slate-400 py-6 text-center">No doctor appointments found</p>
                 ) : (
                   <div className="space-y-3">
                     {doctors.map((d) => (
                       <div key={d.doctor} className="space-y-1">
                         <div className="flex justify-between text-xs">
-                          <span className="font-medium text-slate-300">{d.doctor}</span>
-                          <span className="text-teal-400 font-semibold">{d.count} appointments</span>
+                          <span className="font-semibold text-slate-700">{d.doctor}</span>
+                          <span className="text-[#2563EB] font-bold">{d.count} appointments</span>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                        <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
                           <div
-                            className="h-full bg-teal-500 rounded-full"
+                            className="h-full bg-[#2563EB] rounded-full"
                             style={{ width: `${Math.min(100, d.pct)}%` }}
                           />
                         </div>
@@ -472,21 +472,21 @@ export default function ReportsPage() {
               </div>
 
               {/* Status Breakdown */}
-              <div className="glass-card p-5 space-y-4">
-                <h3 className="text-base font-semibold text-white">Appointment Outcomes</h3>
+              <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-5 space-y-4">
+                <h3 className="text-base font-bold text-[#1E2238]">Appointment Outcomes</h3>
                 {statuses.length === 0 ? (
-                  <p className="text-sm text-slate-500 py-6 text-center">No appointment status records</p>
+                  <p className="text-sm text-slate-400 py-6 text-center">No appointment status records</p>
                 ) : (
                   <div className="space-y-3">
                     {statuses.map((s) => (
                       <div key={s.status} className="space-y-1">
                         <div className="flex justify-between text-xs">
-                          <span className="capitalize font-medium text-slate-300">{s.status}</span>
-                          <span className="text-white font-semibold">{s.count} visits</span>
+                          <span className="capitalize font-semibold text-slate-700">{s.status}</span>
+                          <span className="text-[#1E2238] font-bold">{s.count} visits</span>
                         </div>
-                        <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+                        <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
                           <div
-                            className="h-full bg-blue-500 rounded-full"
+                            className="h-full bg-[#2563EB] rounded-full"
                             style={{ width: `${Math.min(100, s.pct)}%` }}
                           />
                         </div>
@@ -500,11 +500,11 @@ export default function ReportsPage() {
 
           {/* TAB 4: PROCEDURES */}
           {activeTab === 'treatments' && (
-            <div className="glass-card p-5">
-              <h3 className="text-base font-semibold text-white mb-4">Complete Procedure Breakdown</h3>
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] p-5">
+              <h3 className="text-base font-bold text-[#1E2238] mb-4">Complete Procedure Breakdown</h3>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs text-slate-300">
-                  <thead className="bg-slate-900/60 uppercase text-slate-400 border-b border-slate-800">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50/75 border-b border-slate-100 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                     <tr>
                       <th className="px-4 py-3">Treatment / Procedure</th>
                       <th className="px-4 py-3 text-center">Completed Count</th>
@@ -512,22 +512,22 @@ export default function ReportsPage() {
                       <th className="px-4 py-3 text-right">Avg Revenue Per Visit</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800">
+                  <tbody className="divide-y divide-slate-100">
                     {treatments.length === 0 ? (
                       <tr>
-                        <td colSpan={4} className="px-4 py-8 text-center text-slate-500">
+                        <td colSpan={4} className="px-4 py-8 text-center text-slate-400">
                           No treatment records found in this range
                         </td>
                       </tr>
                     ) : (
                       treatments.map((t, idx) => (
-                        <tr key={idx} className="hover:bg-slate-800/40">
-                          <td className="px-4 py-3 font-medium text-white">{t.name}</td>
-                          <td className="px-4 py-3 text-center text-slate-300">{t.count}</td>
-                          <td className="px-4 py-3 text-right font-bold text-emerald-400">
+                        <tr key={idx} className="hover:bg-slate-50/60">
+                          <td className="px-4 py-3 font-semibold text-[#1E2238]">{t.name}</td>
+                          <td className="px-4 py-3 text-center text-slate-600 font-medium">{t.count}</td>
+                          <td className="px-4 py-3 text-right font-bold text-emerald-600">
                             ${t.revenue.toFixed(2)}
                           </td>
-                          <td className="px-4 py-3 text-right text-slate-400">
+                          <td className="px-4 py-3 text-right text-slate-500 font-medium">
                             ${t.count > 0 ? (t.revenue / t.count).toFixed(2) : '0.00'}
                           </td>
                         </tr>
