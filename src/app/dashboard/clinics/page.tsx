@@ -158,18 +158,7 @@ export default function ClinicsPage() {
   const totalPatients = clinics.reduce((sum, c) => sum + Number(c.patient_count || 0), 0);
   const totalRevenue = clinics.reduce((sum, c) => sum + Number(c.total_revenue || 0), 0);
 
-  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.username === 'carab' || user?.username === 'superadmin';
-
-  if (!isSuperAdmin) {
-    return (
-      <div className="bg-white rounded-2xl p-12 border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] text-center">
-        <h2 className="text-xl font-bold text-[#1E2238]">Access Restricted</h2>
-        <p className="text-slate-500 text-sm mt-2">
-          Only Superadmins have permission to manage multi-tenant clinics and companies.
-        </p>
-      </div>
-    );
-  }
+  const isSuperAdmin = true; // All authenticated users can view and create clinics
 
   return (
     <div className="space-y-6">

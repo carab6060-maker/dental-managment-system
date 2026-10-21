@@ -12,28 +12,16 @@ export const GET = withAuth(async (request: NextRequest, user: JWTPayload) => {
       return NextResponse.json({ clinics: [] });
     }
 
-    const isSuper = user.role === 'superadmin' || user.role === 'admin' || user.username === 'carab' || user.username === 'superadmin';
-
-    if (isSuper) {
-      const res = await query(`
-        SELECT 
-          c.*,
-          (SELECT COUNT(*) FROM patients p WHERE p.clinic_id = c.id) as patient_count,
-          (SELECT COUNT(*) FROM doctors d WHERE d.clinic_id = c.id) as doctor_count,
-          (SELECT COUNT(*) FROM appointments a WHERE a.clinic_id = c.id) as appointment_count,
-          (SELECT COALESCE(SUM(amount), 0) FROM payments py WHERE py.clinic_id = c.id) as total_revenue
-        FROM clinics c
-        ORDER BY c.created_at DESC;
-      `);
-      return NextResponse.json({ clinics: res.rows });
-    }
-
-    // Regular users only see their own clinic
-    if (!user.clinicId) {
-      return NextResponse.json({ clinics: [] });
-    }
-
-    const res = await query(`SELECT * FROM clinics WHERE id = $1`, [user.clinicId]);
+    const res = await query(`
+      SELECT 
+        c.*,
+        (SELECT COUNT(*) FROM patients p WHERE p.clinic_id = c.id) as patient_count,
+        (SELECT COUNT(*) FROM doctors d WHERE d.clinic_id = c.id) as doctor_count,
+        (SELECT COUNT(*) FROM appointments a WHERE a.clinic_id = c.id) as appointment_count,
+        (SELECT COALESCE(SUM(amount), 0) FROM payments py WHERE py.clinic_id = c.id) as total_revenue
+      FROM clinics c
+      ORDER BY c.created_at DESC;
+    `);
     return NextResponse.json({ clinics: res.rows });
   } catch (error: any) {
     console.error('Error fetching clinics:', error);
@@ -41,14 +29,12 @@ export const GET = withAuth(async (request: NextRequest, user: JWTPayload) => {
   }
 });
 
-// POST /api/clinics - register new clinic
-export const POST = withAuth(async (request: NextRequest, user: JWTPayload) => {
-  const isSuper = user.role === 'superadmin' || user.role === 'admin' || user.username === 'carab' || user.username === 'superadmin';
-  if (!isSuper) {
-    return NextResponse.json({ error: 'Only Superadmin can register new clinics' }, { status: 403 });
-  }
-
+// POST /api/clinics - register new clinic (open to all authenticated users and new clinic registrations)
+export async function POST(request: NextRequest) {
   try {
+    const token = getTokenFromRequest(request);
+    const currentUser = token ? verifyToken(token) : null;
+
     const body = await request.json();
     const {
       name,
@@ -98,13 +84,17 @@ export const POST = withAuth(async (request: NextRequest, user: JWTPayload) => {
 
     const newClinic = clinicRes.rows[0];
 
-    // 2. Optionally create clinic admin user
+    // 2. Create clinic admin user if provided, or if logged in without credentials
     let newAdmin = null;
+    const targetEmail = adminEmail || (currentUser && !currentUser.clinicId ? currentUser.email : null);
+    const targetPassword = adminPassword || 'admin123';
+
     if (adminEmail && adminPassword) {
       const passwordHash = await bcrypt.hash(adminPassword, 10);
       const userRes = await query(
         `INSERT INTO users (username, email, password_hash, full_name, role, clinic_id, is_active)
          VALUES ($1, $2, $3, $4, 'admin', $5, true)
+         ON CONFLICT (email) DO UPDATE SET clinic_id = $5, role = 'admin'
          RETURNING id, username, email, full_name, role, clinic_id;`,
         [
           adminUsername || adminEmail.split('@')[0],
@@ -115,6 +105,9 @@ export const POST = withAuth(async (request: NextRequest, user: JWTPayload) => {
         ]
       );
       newAdmin = userRes.rows[0];
+    } else if (currentUser) {
+      // Associate with current user
+      await query(`UPDATE users SET clinic_id = COALESCE(clinic_id, $1) WHERE id = $2`, [newClinic.id, currentUser.userId]);
     }
 
     // 3. Seed starter treatments for the new clinic
@@ -130,6 +123,36 @@ export const POST = withAuth(async (request: NextRequest, user: JWTPayload) => {
       [newClinic.id]
     );
 
+    // If an unauthenticated user signed up, log them in automatically
+    if (newAdmin && !currentUser) {
+      const { signToken } = await import('@/lib/auth');
+      const tokenString = signToken({
+        userId: newAdmin.id,
+        email: newAdmin.email,
+        role: newAdmin.role,
+        fullName: newAdmin.full_name,
+        username: newAdmin.username,
+        clinicId: newClinic.id,
+        clinicName: newClinic.name,
+      });
+
+      const response = NextResponse.json({
+        success: true,
+        clinic: newClinic,
+        admin: newAdmin,
+      }, { status: 201 });
+
+      response.cookies.set('auth-token', tokenString, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 86400,
+        path: '/',
+      });
+
+      return response;
+    }
+
     return NextResponse.json({
       success: true,
       clinic: newClinic,
@@ -139,4 +162,4 @@ export const POST = withAuth(async (request: NextRequest, user: JWTPayload) => {
     console.error('Error creating clinic:', error);
     return NextResponse.json({ error: error.message || 'Failed to create clinic' }, { status: 500 });
   }
-});
+}
