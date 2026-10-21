@@ -10,7 +10,7 @@ export default function ClinicSwitcher() {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const isSuperAdmin = user?.role === 'superadmin' || user?.username === 'carab';
+  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.username === 'carab' || user?.username === 'superadmin';
 
   useEffect(() => {
     if (isSuperAdmin) {

@@ -88,7 +88,6 @@ const navItems = [
   {
     href: '/dashboard/clinics',
     label: 'Clinics',
-    superadminOnly: true,
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
         <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -103,10 +102,10 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
   const displayName = user?.username || user?.fullName?.split(' ')[0] || 'carab';
-  const isSuperAdmin = user?.role === 'superadmin' || user?.username === 'carab';
+  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'admin' || user?.username === 'carab' || user?.username === 'superadmin' || user?.username === 'admin';
   const displayRole = isSuperAdmin ? 'Superadmin' : user?.role || 'Admin';
 
-  const visibleNavItems = navItems.filter((item) => !item.superadminOnly || isSuperAdmin);
+  const visibleNavItems = navItems;
 
   return (
     <aside
