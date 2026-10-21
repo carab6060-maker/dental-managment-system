@@ -42,7 +42,6 @@ export default function DashboardLayout({
   };
 
   const displayName = user.username || user.fullName?.split(' ')[0] || 'carab';
-  const displayRole = user.role === 'admin' ? 'Superadmin' : user.role;
 
   return (
     <div className="min-h-screen bg-[#F4F6FB] flex">
@@ -57,16 +56,7 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="px-3.5 py-1.5 rounded-full bg-white border border-slate-200/80 shadow-xs text-xs font-medium text-slate-600 flex items-center gap-1.5">
-              <span className="text-slate-400">Company:</span>
-              <span className="font-semibold text-slate-800">Prime Dental Care</span>
-            </div>
-
-            <div className="px-3 py-1 rounded-full bg-blue-50 border border-blue-200/60 text-xs font-semibold text-blue-600 capitalize">
-              {displayRole}
-            </div>
-
-            <div className="text-sm font-semibold text-slate-800 ml-1">
+            <div className="text-sm font-semibold text-slate-800">
               {displayName}
             </div>
           </div>
