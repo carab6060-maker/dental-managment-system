@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, isDbConfigured } from '@/lib/db';
 import { mockStore } from '@/lib/mockStore';
+import { getTenantContext, getDefaultClinicId } from '@/lib/tenantQuery';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || '';
     const patientId = searchParams.get('patient_id') || '';
+    const { clinicId } = getTenantContext(request);
 
     if (isDbConfigured()) {
       let q = `
@@ -25,13 +27,18 @@ export async function GET(request: NextRequest) {
       `;
       const params: any[] = [];
 
+      if (clinicId) {
+        params.push(clinicId);
+        q += ` AND i.clinic_id = $${params.length}`;
+      }
+
       if (status) {
-        q += ` AND i.status = $${params.length + 1}`;
         params.push(status);
+        q += ` AND i.status = $${params.length}`;
       }
       if (patientId) {
-        q += ` AND i.patient_id = $${params.length + 1}`;
         params.push(patientId);
+        q += ` AND i.patient_id = $${params.length}`;
       }
 
       q += ' ORDER BY i.created_at DESC';
@@ -50,6 +57,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { items, ...invoiceData } = body;
+    const { clinicId } = getTenantContext(request);
+    const targetClinicId = invoiceData.clinic_id || clinicId || (await getDefaultClinicId());
 
     if (isDbConfigured()) {
       // Calculate totals
@@ -62,7 +71,7 @@ export async function POST(request: NextRequest) {
       const discount = Number(invoiceData.discount || 0);
       const total = Math.max(0, subtotal + taxAmount - discount);
 
-      // Create invoice (invoice_number handled by DB trigger or manual fallback)
+      // Create invoice number
       const countRes = await query('SELECT count(*) as count FROM invoices');
       const invNum = `INV-${String(parseInt(countRes.rows[0].count) + 1).padStart(6, '0')}`;
 
@@ -70,8 +79,8 @@ export async function POST(request: NextRequest) {
         `INSERT INTO invoices (
           invoice_number, patient_id, appointment_id, subtotal,
           tax_rate, tax_amount, discount, total, amount_paid,
-          balance_due, status, due_date, notes
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, $8, 'pending', $9, $10)
+          balance_due, status, due_date, notes, clinic_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, $8, 'pending', $9, $10, $11)
         RETURNING *`,
         [
           invNum,
@@ -84,6 +93,7 @@ export async function POST(request: NextRequest) {
           total,
           invoiceData.due_date || null,
           invoiceData.notes || null,
+          targetClinicId,
         ]
       );
 

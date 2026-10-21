@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, isDbConfigured } from '@/lib/db';
 import { mockStore } from '@/lib/mockStore';
+import { getTenantContext, getDefaultClinicId } from '@/lib/tenantQuery';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,18 +10,24 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const category = searchParams.get('category') || '';
+    const { clinicId } = getTenantContext(request);
 
     if (isDbConfigured()) {
       let q = 'SELECT * FROM treatments WHERE is_active = true';
       const params: any[] = [];
 
+      if (clinicId) {
+        params.push(clinicId);
+        q += ` AND clinic_id = $${params.length}`;
+      }
+
       if (category) {
-        q += ' AND category = $' + (params.length + 1);
         params.push(category);
+        q += ` AND category = $${params.length}`;
       }
       if (search) {
-        q += ' AND (name ILIKE $' + (params.length + 1) + ' OR category ILIKE $' + (params.length + 1) + ')';
         params.push(`%${search}%`);
+        q += ` AND (name ILIKE $${params.length} OR category ILIKE $${params.length})`;
       }
 
       q += ' ORDER BY category ASC, name ASC';
@@ -49,18 +56,21 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const { clinicId } = getTenantContext(request);
+    const targetClinicId = body.clinic_id || clinicId || (await getDefaultClinicId());
 
     if (isDbConfigured()) {
       const res = await query(
-        `INSERT INTO treatments (name, category, description, duration_minutes, cost)
-        VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO treatments (name, category, description, duration_minutes, cost, clinic_id)
+        VALUES ($1, $2, $3, $4, $5, $6)
         RETURNING *`,
         [
           body.name,
           body.category || 'General',
           body.description || null,
-          Number(body.duration_minutes || 30),
-          Number(body.cost || 0),
+          body.duration_minutes || 30,
+          body.cost || 0,
+          targetClinicId,
         ]
       );
       return NextResponse.json(res.rows[0], { status: 201 });

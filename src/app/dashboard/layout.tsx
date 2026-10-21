@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
+import ClinicSwitcher from '@/components/ClinicSwitcher';
 
 export default function DashboardLayout({
   children,
@@ -31,6 +32,7 @@ export default function DashboardLayout({
   if (!user) return null;
 
   const getPageTitle = () => {
+    if (pathname.includes('/clinics')) return 'Clinics & Organizations';
     if (pathname.includes('/patients')) return 'Patients';
     if (pathname.includes('/appointments')) return 'Appointments';
     if (pathname.includes('/doctors')) return 'Doctors';
@@ -56,6 +58,7 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-3">
+            <ClinicSwitcher />
             <div className="text-sm font-semibold text-slate-800">
               {displayName}
             </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, isDbConfigured } from '@/lib/db';
 import { mockStore } from '@/lib/mockStore';
+import { getTenantContext, getDefaultClinicId } from '@/lib/tenantQuery';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const invoiceId = searchParams.get('invoice_id') || '';
     const patientId = searchParams.get('patient_id') || '';
+    const { clinicId } = getTenantContext(request);
 
     if (isDbConfigured()) {
       let q = `
@@ -23,13 +25,18 @@ export async function GET(request: NextRequest) {
       `;
       const params: any[] = [];
 
+      if (clinicId) {
+        params.push(clinicId);
+        q += ` AND p.clinic_id = $${params.length}`;
+      }
+
       if (invoiceId) {
-        q += ` AND p.invoice_id = $${params.length + 1}`;
         params.push(invoiceId);
+        q += ` AND p.invoice_id = $${params.length}`;
       }
       if (patientId) {
-        q += ` AND p.patient_id = $${params.length + 1}`;
         params.push(patientId);
+        q += ` AND p.patient_id = $${params.length}`;
       }
 
       q += ' ORDER BY p.payment_date DESC, p.created_at DESC';
@@ -47,6 +54,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const { clinicId } = getTenantContext(request);
+    const targetClinicId = body.clinic_id || clinicId || (await getDefaultClinicId());
 
     if (isDbConfigured()) {
       // Validate payment doesn't exceed balance
@@ -67,8 +76,8 @@ export async function POST(request: NextRequest) {
 
       const payRes = await query(
         `INSERT INTO payments (
-          invoice_id, patient_id, amount, payment_method, payment_date, reference_number, notes
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+          invoice_id, patient_id, amount, payment_method, payment_date, reference_number, notes, clinic_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *`,
         [
           body.invoice_id,
@@ -78,10 +87,11 @@ export async function POST(request: NextRequest) {
           body.payment_date || new Date().toISOString().split('T')[0],
           body.reference_number || null,
           body.notes || null,
+          targetClinicId,
         ]
       );
 
-      // Explicitly update invoice balance in case trigger didn't fire
+      // Explicitly update invoice balance
       const newPaid = Number(invoice.amount_paid) + amount;
       const newBalance = Math.max(0, Number(invoice.total) - newPaid);
       const newStatus = newBalance <= 0 ? 'paid' : 'partial';

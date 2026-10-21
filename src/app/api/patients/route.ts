@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, isDbConfigured } from '@/lib/db';
 import { mockStore } from '@/lib/mockStore';
+import { getTenantContext, getDefaultClinicId } from '@/lib/tenantQuery';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,13 +13,20 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = (page - 1) * limit;
 
+    const { clinicId } = getTenantContext(request);
+
     if (isDbConfigured()) {
       let q = 'SELECT * FROM patients WHERE is_active = true';
       const params: any[] = [];
 
+      if (clinicId) {
+        params.push(clinicId);
+        q += ` AND clinic_id = $${params.length}`;
+      }
+
       if (search) {
-        q += ' AND (first_name ILIKE $1 OR last_name ILIKE $1 OR phone ILIKE $1 OR email ILIKE $1)';
         params.push(`%${search}%`);
+        q += ` AND (first_name ILIKE $${params.length} OR last_name ILIKE $${params.length} OR phone ILIKE $${params.length} OR email ILIKE $${params.length})`;
       }
 
       q += ' ORDER BY created_at DESC';
@@ -46,6 +54,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const { clinicId } = getTenantContext(request);
+    const targetClinicId = body.clinic_id || clinicId || (await getDefaultClinicId());
 
     if (isDbConfigured()) {
       const res = await query(
@@ -53,8 +63,8 @@ export async function POST(request: NextRequest) {
           first_name, last_name, date_of_birth, gender, email, phone,
           address, city, emergency_contact_name, emergency_contact_phone,
           blood_group, allergies, medical_history, insurance_provider,
-          insurance_number, notes
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+          insurance_number, notes, clinic_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
         RETURNING *`,
         [
           body.first_name,
@@ -73,6 +83,7 @@ export async function POST(request: NextRequest) {
           body.insurance_provider || null,
           body.insurance_number || null,
           body.notes || null,
+          targetClinicId,
         ]
       );
       return NextResponse.json(res.rows[0], { status: 201 });

@@ -9,6 +9,8 @@ export interface JWTPayload {
   role: string;
   fullName: string;
   username?: string;
+  clinicId?: string | null;
+  clinicName?: string | null;
 }
 
 export function signToken(payload: JWTPayload): string {

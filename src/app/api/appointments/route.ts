@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query, isDbConfigured } from '@/lib/db';
 import { mockStore } from '@/lib/mockStore';
+import { getTenantContext, getDefaultClinicId } from '@/lib/tenantQuery';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,8 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || '';
     const from = searchParams.get('from') || '';
     const to = searchParams.get('to') || '';
+
+    const { clinicId } = getTenantContext(request);
 
     if (isDbConfigured()) {
       let q = `
@@ -29,29 +32,34 @@ export async function GET(request: NextRequest) {
       `;
       const params: any[] = [];
 
+      if (clinicId) {
+        params.push(clinicId);
+        q += ` AND a.clinic_id = $${params.length}`;
+      }
+
       if (date) {
-        q += ` AND a.appointment_date = $${params.length + 1}`;
         params.push(date);
+        q += ` AND a.appointment_date = $${params.length}`;
       }
       if (doctorId) {
-        q += ` AND a.doctor_id = $${params.length + 1}`;
         params.push(doctorId);
+        q += ` AND a.doctor_id = $${params.length}`;
       }
       if (patientId) {
-        q += ` AND a.patient_id = $${params.length + 1}`;
         params.push(patientId);
+        q += ` AND a.patient_id = $${params.length}`;
       }
       if (status) {
-        q += ` AND a.status = $${params.length + 1}`;
         params.push(status);
+        q += ` AND a.status = $${params.length}`;
       }
       if (from) {
-        q += ` AND a.appointment_date >= $${params.length + 1}`;
         params.push(from);
+        q += ` AND a.appointment_date >= $${params.length}`;
       }
       if (to) {
-        q += ` AND a.appointment_date <= $${params.length + 1}`;
         params.push(to);
+        q += ` AND a.appointment_date <= $${params.length}`;
       }
 
       q += ' ORDER BY a.appointment_date DESC, a.start_time ASC';
@@ -70,6 +78,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const { clinicId } = getTenantContext(request);
+    const targetClinicId = body.clinic_id || clinicId || (await getDefaultClinicId());
 
     if (isDbConfigured()) {
       // Conflict check
@@ -88,8 +98,8 @@ export async function POST(request: NextRequest) {
 
       const res = await query(
         `INSERT INTO appointments (
-          patient_id, doctor_id, treatment_id, appointment_date, start_time, end_time, status, notes
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          patient_id, doctor_id, treatment_id, appointment_date, start_time, end_time, status, notes, clinic_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *`,
         [
           body.patient_id,
@@ -100,6 +110,7 @@ export async function POST(request: NextRequest) {
           body.end_time || null,
           body.status || 'scheduled',
           body.notes || null,
+          targetClinicId,
         ]
       );
 

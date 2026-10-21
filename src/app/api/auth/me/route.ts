@@ -19,6 +19,8 @@ export async function GET(request: NextRequest) {
       username: user.username,
       fullName: user.fullName,
       role: user.role,
+      clinicId: user.clinicId || null,
+      clinicName: user.clinicName || null,
     },
   });
 }

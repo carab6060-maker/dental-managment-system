@@ -17,9 +17,11 @@ export async function POST(request: NextRequest) {
 
     if (isDbConfigured()) {
       const res = await query(
-        `SELECT * FROM users 
-         WHERE (LOWER(email) = $1 OR LOWER(username) = $1) 
-           AND is_active = true 
+        `SELECT u.*, c.name as clinic_name, c.slug as clinic_slug 
+         FROM users u 
+         LEFT JOIN clinics c ON u.clinic_id = c.id
+         WHERE (LOWER(u.email) = $1 OR LOWER(u.username) = $1) 
+           AND u.is_active = true 
          LIMIT 1`,
         [identifier]
       );
@@ -40,6 +42,8 @@ export async function POST(request: NextRequest) {
         username: user.username || undefined,
         role: user.role,
         fullName: user.full_name,
+        clinicId: user.clinic_id || null,
+        clinicName: user.clinic_name || null,
       });
 
       const response = NextResponse.json({
@@ -50,6 +54,8 @@ export async function POST(request: NextRequest) {
           email: user.email,
           fullName: user.full_name,
           role: user.role,
+          clinicId: user.clinic_id || null,
+          clinicName: user.clinic_name || null,
         },
       });
 
