@@ -11,6 +11,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ============================================
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  username VARCHAR(100) UNIQUE,
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   full_name VARCHAR(255) NOT NULL,
@@ -189,11 +190,13 @@ CREATE POLICY "Allow all for service role" ON invoice_items FOR ALL USING (true)
 CREATE POLICY "Allow all for service role" ON payments FOR ALL USING (true) WITH CHECK (true);
 
 -- ============================================
--- SEED DATA: Default admin user
+-- SEED DATA: Default admin users
 -- Password: admin123 (bcrypt hashed)
 -- ============================================
-INSERT INTO users (email, password_hash, full_name, role)
-VALUES ('admin@dental.com', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'System Admin', 'admin')
+INSERT INTO users (username, email, password_hash, full_name, role)
+VALUES 
+  ('superadmin', 'superadmin@dental.com', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 'Super Administrator', 'admin'),
+  ('admin', 'admin@dental.com', '$2a$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW', 'System Admin', 'admin')
 ON CONFLICT (email) DO NOTHING;
 
 -- ============================================

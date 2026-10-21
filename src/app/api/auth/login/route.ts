@@ -7,33 +7,37 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json();
+    const body = await request.json();
+    const identifier = (body.usernameOrEmail || body.username || body.email || '').toString().trim().toLowerCase();
+    const password = body.password;
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password are required' }, { status: 400 });
+    if (!identifier || !password) {
+      return NextResponse.json({ error: 'Username/email and password are required' }, { status: 400 });
     }
-
-    const cleanEmail = email.toLowerCase().trim();
 
     if (isDbConfigured()) {
       const res = await query(
-        'SELECT * FROM users WHERE LOWER(email) = $1 AND is_active = true LIMIT 1',
-        [cleanEmail]
+        `SELECT * FROM users 
+         WHERE (LOWER(email) = $1 OR LOWER(username) = $1) 
+           AND is_active = true 
+         LIMIT 1`,
+        [identifier]
       );
 
       if (res.rows.length === 0) {
-        return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+        return NextResponse.json({ error: 'Invalid username/email or password' }, { status: 401 });
       }
 
       const user = res.rows[0];
       const isValidPassword = await bcrypt.compare(password, user.password_hash);
       if (!isValidPassword) {
-        return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+        return NextResponse.json({ error: 'Invalid username/email or password' }, { status: 401 });
       }
 
       const token = signToken({
         userId: user.id,
         email: user.email,
+        username: user.username || undefined,
         role: user.role,
         fullName: user.full_name,
       });
@@ -42,6 +46,7 @@ export async function POST(request: NextRequest) {
         token,
         user: {
           id: user.id,
+          username: user.username,
           email: user.email,
           fullName: user.full_name,
           role: user.role,
@@ -60,23 +65,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Fallback if DB is not configured
-    if (
-      (cleanEmail === 'admin@dental.com' || cleanEmail === 'admin') &&
-      (password === 'admin123' || password === 'admin')
-    ) {
+    const isSuperAdmin = identifier === 'superadmin' || identifier === 'superadmin@dental.com';
+    const isAdmin = identifier === 'admin' || identifier === 'admin@dental.com';
+
+    if ((isSuperAdmin || isAdmin) && (password === 'admin123' || password === 'admin')) {
       const token = signToken({
-        userId: 'mock-admin-id',
-        email: 'admin@dental.com',
+        userId: isSuperAdmin ? 'mock-superadmin-id' : 'mock-admin-id',
+        username: isSuperAdmin ? 'superadmin' : 'admin',
+        email: isSuperAdmin ? 'superadmin@dental.com' : 'admin@dental.com',
         role: 'admin',
-        fullName: 'Dr. System Administrator',
+        fullName: isSuperAdmin ? 'Super Administrator' : 'System Administrator',
       });
 
       const response = NextResponse.json({
         token,
         user: {
-          id: 'mock-admin-id',
-          email: 'admin@dental.com',
-          fullName: 'Dr. System Administrator',
+          id: isSuperAdmin ? 'mock-superadmin-id' : 'mock-admin-id',
+          username: isSuperAdmin ? 'superadmin' : 'admin',
+          email: isSuperAdmin ? 'superadmin@dental.com' : 'admin@dental.com',
+          fullName: isSuperAdmin ? 'Super Administrator' : 'System Administrator',
           role: 'admin',
         },
       });
@@ -92,7 +99,7 @@ export async function POST(request: NextRequest) {
       return response;
     }
 
-    return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
+    return NextResponse.json({ error: 'Invalid username/email or password' }, { status: 401 });
   } catch (err: any) {
     console.error('Login error:', err);
     return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 });

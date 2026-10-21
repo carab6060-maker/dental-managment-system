@@ -70,7 +70,9 @@ export default function Sidebar() {
         {!collapsed && user && (
           <div className="mb-3 px-3 animate-fadeIn">
             <p className="text-sm font-medium text-white truncate">{user.fullName}</p>
-            <p className="text-xs text-slate-500 capitalize">{user.role}</p>
+            <p className="text-xs text-teal-400">
+              {user.username ? `@${user.username}` : user.email} • <span className="text-slate-400 capitalize">{user.role}</span>
+            </p>
           </div>
         )}
         <div className="flex items-center gap-2">
