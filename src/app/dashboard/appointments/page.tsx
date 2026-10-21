@@ -15,6 +15,8 @@ export default function AppointmentsPage() {
   const [saving, setSaving] = useState(false);
   const [statusFilter, setStatusFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
+  const [patientMode, setPatientMode] = useState<'existing' | 'new'>('existing');
+  const [newPatient, setNewPatient] = useState({ name: '', phone: '', age: '' });
   const { showToast } = useToast();
 
   const [form, setForm] = useState({
@@ -54,12 +56,27 @@ export default function AppointmentsPage() {
 
   const openAddModal = () => {
     setEditingApt(null);
-    setForm({ patient_id: '', doctor_id: '', treatment_id: '', appointment_date: '', start_time: '', end_time: '', status: 'scheduled', notes: '' });
+    setPatientMode('existing');
+    setNewPatient({ name: '', phone: '', age: '' });
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const currentHour = String(now.getHours() + 1).padStart(2, '0') + ':00';
+    setForm({
+      patient_id: patients[0]?.id || '',
+      doctor_id: doctors[0]?.id || '',
+      treatment_id: '',
+      appointment_date: today,
+      start_time: currentHour,
+      end_time: '',
+      status: 'scheduled',
+      notes: '',
+    });
     setShowModal(true);
   };
 
   const openEditModal = (apt: any) => {
     setEditingApt(apt);
+    setPatientMode('existing');
     setForm({
       patient_id: apt.patient_id, doctor_id: apt.doctor_id,
       treatment_id: apt.treatment_id || '', appointment_date: apt.appointment_date,
@@ -75,16 +92,62 @@ export default function AppointmentsPage() {
     try {
       const url = editingApt ? `/api/appointments/${editingApt.id}` : '/api/appointments';
       const method = editingApt ? 'PUT' : 'POST';
-      const body = { ...form };
-      if (!body.treatment_id) delete (body as any).treatment_id;
-      if (!body.end_time) delete (body as any).end_time;
-      const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (!res.ok) { const err = await res.json(); throw new Error(err.error); }
-      showToast(editingApt ? 'Appointment updated!' : 'Appointment booked!', 'success');
+      const body: any = { ...form };
+
+      if (!editingApt && patientMode === 'new') {
+        if (!newPatient.name.trim()) {
+          showToast('Fadlan gali magaca bukaanka (Name is required)', 'error');
+          setSaving(false);
+          return;
+        }
+        if (!newPatient.phone.trim()) {
+          showToast('Fadlan gali lambarka taleefanka (Phone is required)', 'error');
+          setSaving(false);
+          return;
+        }
+        if (!newPatient.age.trim()) {
+          showToast('Fadlan gali da\'da bukaanka (Age is required)', 'error');
+          setSaving(false);
+          return;
+        }
+        body.new_patient = {
+          first_name: newPatient.name,
+          phone: newPatient.phone,
+          age: newPatient.age,
+        };
+        delete body.patient_id;
+      } else {
+        if (!body.patient_id) {
+          showToast('Fadlan dooro bukaan (Please select a patient)', 'error');
+          setSaving(false);
+          return;
+        }
+      }
+
+      if (!body.treatment_id) delete body.treatment_id;
+      if (!body.end_time) delete body.end_time;
+      if (!body.doctor_id && doctors[0]?.id) body.doctor_id = doctors[0].id;
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to save appointment');
+      }
+
+      showToast(editingApt ? 'Appointment updated!' : 'Appointment booked successfully!', 'success');
       setShowModal(false);
       fetchAppointments();
-    } catch (err: any) { showToast(err.message, 'error'); }
-    finally { setSaving(false); }
+      fetchDropdowns();
+    } catch (err: any) {
+      showToast(err.message, 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const updateStatus = async (id: string, status: string) => {
@@ -200,65 +263,220 @@ export default function AppointmentsPage() {
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={editingApt ? 'Edit Appointment' : 'Book Appointment'} size="md">
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Information Notice */}
+          <div className="p-3 bg-blue-50/80 border border-blue-200/70 rounded-xl text-xs text-blue-800 flex items-center gap-2">
+            <span className="text-base">ℹ️</span>
+            <div>
+              <strong>Xogta Waajibka ah (Required):</strong> Kaliya <strong>Magaca</strong>, <strong>Numberka</strong>, iyo <strong>Da&apos;da</strong> ayaa waajib ah. Wixii kale oo dhan waa optional.
+            </div>
+          </div>
+
+          {!editingApt && (
+            <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
+              <button
+                type="button"
+                onClick={() => setPatientMode('existing')}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  patientMode === 'existing' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Bukaan Hore (Existing Patient)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPatientMode('new')}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  patientMode === 'new' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                + Bukaan Cusub (New Patient)
+              </button>
+            </div>
+          )}
+
+          {!editingApt && patientMode === 'new' ? (
+            <div className="bg-slate-50/70 p-4 rounded-xl border border-slate-200/80 space-y-3">
+              <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+                Bukaan Cusub - Xogta Muhiimka ah (3 Qodob Kaliya)
+              </p>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Magaca Bukaanka (Name) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Maxamed Cali"
+                  value={newPatient.name}
+                  onChange={(e) => setNewPatient({ ...newPatient, name: e.target.value })}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Number-ka (Phone) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="e.g. 061XXXXXXX"
+                    value={newPatient.phone}
+                    onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
+                    className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Da&apos;da (Age) <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      max="125"
+                      placeholder="e.g. 26"
+                      value={newPatient.age}
+                      onChange={(e) => setNewPatient({ ...newPatient, age: e.target.value })}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 pr-10"
+                    />
+                    <span className="absolute right-3 top-2 text-xs text-slate-400 font-medium pointer-events-none">
+                      jir
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                Patient <span className="text-red-500">*</span>
+              </label>
+              <select
+                required
+                value={form.patient_id}
+                onChange={(e) => updateForm('patient_id', e.target.value)}
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+              >
+                <option value="">Dooro Bukaanka (Select Patient)</option>
+                {patients.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.first_name} {p.last_name && p.last_name !== '-' ? p.last_name : ''} - {p.phone}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Patient *</label>
-            <select required value={form.patient_id} onChange={(e) => updateForm('patient_id', e.target.value)}
-              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15">
-              <option value="">Select Patient</option>
-              {patients.map((p) => <option key={p.id} value={p.id}>{p.first_name} {p.last_name} - {p.phone}</option>)}
+            <label className="block text-sm font-semibold text-slate-700 mb-1">
+              Doctor <span className="text-xs text-slate-400 font-normal">(Optional - auto-assigned)</span>
+            </label>
+            <select
+              value={form.doctor_id}
+              onChange={(e) => updateForm('doctor_id', e.target.value)}
+              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+            >
+              <option value="">Auto-assign First Available Doctor (Optional)</option>
+              {doctors.map((d) => (
+                <option key={d.id} value={d.id}>
+                  Dr. {d.first_name} {d.last_name} - {d.specialization}
+                </option>
+              ))}
             </select>
           </div>
+
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Doctor *</label>
-            <select required value={form.doctor_id} onChange={(e) => updateForm('doctor_id', e.target.value)}
-              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15">
-              <option value="">Select Doctor</option>
-              {doctors.map((d) => <option key={d.id} value={d.id}>Dr. {d.first_name} {d.last_name} - {d.specialization}</option>)}
+            <label className="block text-sm font-semibold text-slate-700 mb-1">
+              Treatment <span className="text-xs text-slate-400 font-normal">(Optional)</span>
+            </label>
+            <select
+              value={form.treatment_id}
+              onChange={(e) => updateForm('treatment_id', e.target.value)}
+              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+            >
+              <option value="">Dooro Treatment (Optional)</option>
+              {treatments.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} - ${t.cost}
+                </option>
+              ))}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Treatment</label>
-            <select value={form.treatment_id} onChange={(e) => updateForm('treatment_id', e.target.value)}
-              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15">
-              <option value="">Select Treatment (optional)</option>
-              {treatments.map((t) => <option key={t.id} value={t.id}>{t.name} - ${t.cost}</option>)}
-            </select>
-          </div>
+
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Date *</label>
-              <input type="date" required value={form.appointment_date} onChange={(e) => updateForm('appointment_date', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15" />
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Date</label>
+              <input
+                type="date"
+                value={form.appointment_date}
+                onChange={(e) => updateForm('appointment_date', e.target.value)}
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+              />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Start Time *</label>
-              <input type="time" required value={form.start_time} onChange={(e) => updateForm('start_time', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15" />
+              <label className="block text-sm font-semibold text-slate-700 mb-1">Start Time</label>
+              <input
+                type="time"
+                value={form.start_time}
+                onChange={(e) => updateForm('start_time', e.target.value)}
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+              />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">End Time</label>
-              <input type="time" value={form.end_time} onChange={(e) => updateForm('end_time', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15" />
+              <label className="block text-sm font-semibold text-slate-700 mb-1">
+                End Time <span className="text-xs text-slate-400 font-normal">(Optional)</span>
+              </label>
+              <input
+                type="time"
+                value={form.end_time}
+                onChange={(e) => updateForm('end_time', e.target.value)}
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+              />
             </div>
           </div>
+
           {editingApt && (
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">Status</label>
-              <select value={form.status} onChange={(e) => updateForm('status', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15">
+              <select
+                value={form.status}
+                onChange={(e) => updateForm('status', e.target.value)}
+                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+              >
                 {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
           )}
+
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Notes</label>
-            <textarea value={form.notes} rows={2} onChange={(e) => updateForm('notes', e.target.value)}
-              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15" />
+            <label className="block text-sm font-semibold text-slate-700 mb-1">
+              Notes <span className="text-xs text-slate-400 font-normal">(Optional)</span>
+            </label>
+            <textarea
+              value={form.notes}
+              rows={2}
+              placeholder="Optional notes..."
+              onChange={(e) => updateForm('notes', e.target.value)}
+              className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+            />
           </div>
+
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-            <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition-colors">Cancel</button>
-            <button type="submit" disabled={saving} className="px-6 py-2.5 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 disabled:opacity-50 transition-all">
-              {saving ? 'Saving...' : editingApt ? 'Update' : 'Book Appointment'}
+            <button
+              type="button"
+              onClick={() => setShowModal(false)}
+              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-medium transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-6 py-2.5 bg-[#2563EB] hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-blue-500/20 disabled:opacity-50 transition-all"
+            >
+              {saving ? 'Saving...' : editingApt ? 'Update Appointment' : 'Book Appointment'}
             </button>
           </div>
         </form>

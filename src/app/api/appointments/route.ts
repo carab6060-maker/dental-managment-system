@@ -81,19 +81,68 @@ export async function POST(request: NextRequest) {
     const { clinicId } = getTenantContext(request);
     const targetClinicId = body.clinic_id || clinicId || (await getDefaultClinicId());
 
-    if (isDbConfigured()) {
-      // Conflict check
-      const conflicts = await query(
-        `SELECT id FROM appointments 
-         WHERE doctor_id = $1 AND appointment_date = $2 AND start_time = $3 AND status != 'cancelled'`,
-        [body.doctor_id, body.appointment_date, body.start_time]
-      );
+    let patientId = body.patient_id;
+    let doctorId = body.doctor_id;
+    const appointmentDate = body.appointment_date || new Date().toISOString().split('T')[0];
+    const startTime = body.start_time || '09:00';
 
-      if (conflicts.rows.length > 0) {
-        return NextResponse.json(
-          { error: 'This time slot is already booked for the selected doctor' },
-          { status: 409 }
+    if (isDbConfigured()) {
+      // If a new patient object was provided directly
+      if (!patientId && body.new_patient) {
+        const np = body.new_patient;
+        let pDob = np.date_of_birth || null;
+        if (!pDob && np.age) {
+          const birthYear = new Date().getFullYear() - parseInt(np.age);
+          if (!isNaN(birthYear)) pDob = `${birthYear}-01-01`;
+        }
+        let fName = np.first_name?.trim() || '';
+        let lName = np.last_name?.trim() || '';
+        if (!lName && fName.includes(' ')) {
+          const parts = fName.split(/\s+/);
+          fName = parts[0];
+          lName = parts.slice(1).join(' ');
+        } else if (!lName) {
+          lName = '-';
+        }
+
+        const newPatRes = await query(
+          `INSERT INTO patients (first_name, last_name, phone, date_of_birth, clinic_id)
+           VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+          [fName || 'Patient', lName, np.phone || '', pDob, targetClinicId]
         );
+        if (newPatRes.rows.length > 0) {
+          patientId = newPatRes.rows[0].id;
+        }
+      }
+
+      // If doctor is not specified, auto-select first active doctor
+      if (!doctorId) {
+        const docRes = await query(
+          `SELECT id FROM doctors WHERE clinic_id = $1 AND is_active = true ORDER BY created_at ASC LIMIT 1`,
+          [targetClinicId]
+        );
+        if (docRes.rows.length > 0) {
+          doctorId = docRes.rows[0].id;
+        } else {
+          const anyDoc = await query(`SELECT id FROM doctors WHERE is_active = true ORDER BY created_at ASC LIMIT 1`);
+          if (anyDoc.rows.length > 0) doctorId = anyDoc.rows[0].id;
+        }
+      }
+
+      // Conflict check (only if doctorId is present)
+      if (doctorId) {
+        const conflicts = await query(
+          `SELECT id FROM appointments 
+           WHERE doctor_id = $1 AND appointment_date = $2 AND start_time = $3 AND status != 'cancelled'`,
+          [doctorId, appointmentDate, startTime]
+        );
+
+        if (conflicts.rows.length > 0) {
+          return NextResponse.json(
+            { error: 'This time slot is already booked for the doctor' },
+            { status: 409 }
+          );
+        }
       }
 
       const res = await query(
@@ -102,11 +151,11 @@ export async function POST(request: NextRequest) {
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING *`,
         [
-          body.patient_id,
-          body.doctor_id,
+          patientId,
+          doctorId,
           body.treatment_id || null,
-          body.appointment_date,
-          body.start_time,
+          appointmentDate,
+          startTime,
           body.end_time || null,
           body.status || 'scheduled',
           body.notes || null,
@@ -132,9 +181,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(detail.rows[0], { status: 201 });
     }
 
-    const existing = mockStore.getAppointments(body.appointment_date, '', body.doctor_id);
+    const existing = mockStore.getAppointments(appointmentDate, '', doctorId);
     const conflict = existing.find(
-      (a) => a.start_time.slice(0, 5) === body.start_time.slice(0, 5) && a.status !== 'cancelled'
+      (a) => a.start_time.slice(0, 5) === startTime.slice(0, 5) && a.status !== 'cancelled'
     );
     if (conflict) {
       return NextResponse.json(
@@ -142,7 +191,13 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       );
     }
-    const newApt = mockStore.addAppointment(body);
+    const newApt = mockStore.addAppointment({
+      ...body,
+      patient_id: patientId,
+      doctor_id: doctorId,
+      appointment_date: appointmentDate,
+      start_time: startTime,
+    });
     return NextResponse.json(mockStore.getAppointment(newApt.id), { status: 201 });
   } catch (err: any) {
     console.error('Error creating appointment:', err);

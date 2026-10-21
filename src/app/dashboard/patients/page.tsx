@@ -26,7 +26,7 @@ interface Patient {
 }
 
 const emptyPatient = {
-  first_name: '', last_name: '', date_of_birth: '', gender: 'male',
+  first_name: '', last_name: '', date_of_birth: '', gender: '',
   email: '', phone: '', address: '', city: '',
   emergency_contact_name: '', emergency_contact_phone: '',
   blood_group: '', allergies: '', medical_history: '',
@@ -40,15 +40,50 @@ export default function PatientsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
   const [form, setForm] = useState(emptyPatient);
+  const [ageInput, setAgeInput] = useState('');
   const [saving, setSaving] = useState(false);
   const { showToast } = useToast();
+
+  const calculateAge = (dobString?: string) => {
+    if (!dobString) return null;
+    const dob = new Date(dobString);
+    if (isNaN(dob.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    return age >= 0 ? age : null;
+  };
+
+  const handleAgeChange = (val: string) => {
+    setAgeInput(val);
+    const parsed = parseInt(val);
+    if (!isNaN(parsed) && parsed >= 0 && parsed <= 125) {
+      const year = new Date().getFullYear() - parsed;
+      updateForm('date_of_birth', `${year}-01-01`);
+    } else if (!val) {
+      updateForm('date_of_birth', '');
+    }
+  };
+
+  const handleDobChange = (val: string) => {
+    updateForm('date_of_birth', val);
+    if (val) {
+      const age = calculateAge(val);
+      setAgeInput(age !== null ? age.toString() : '');
+    } else {
+      setAgeInput('');
+    }
+  };
 
   const fetchPatients = useCallback(async () => {
     try {
       const res = await fetch(`/api/patients?search=${encodeURIComponent(search)}`);
       const data = await res.json();
       setPatients(data.data || []);
-    } catch (err) {
+    } catch {
       showToast('Failed to load patients', 'error');
     } finally {
       setLoading(false);
@@ -62,16 +97,18 @@ export default function PatientsPage() {
   const openAddModal = () => {
     setEditingPatient(null);
     setForm(emptyPatient);
+    setAgeInput('');
     setShowModal(true);
   };
 
   const openEditModal = (patient: Patient) => {
     setEditingPatient(patient);
+    const dob = patient.date_of_birth ? patient.date_of_birth.slice(0, 10) : '';
     setForm({
       first_name: patient.first_name || '',
       last_name: patient.last_name || '',
-      date_of_birth: patient.date_of_birth || '',
-      gender: patient.gender || 'male',
+      date_of_birth: dob,
+      gender: patient.gender || '',
       email: patient.email || '',
       phone: patient.phone || '',
       address: patient.address || '',
@@ -85,21 +122,47 @@ export default function PatientsPage() {
       insurance_number: patient.insurance_number || '',
       notes: patient.notes || '',
     });
+    if (dob) {
+      const age = calculateAge(dob);
+      setAgeInput(age !== null ? age.toString() : '');
+    } else {
+      setAgeInput('');
+    }
     setShowModal(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!form.first_name.trim()) {
+      showToast('Fadlan gali magaca bukaanka (Name is required)', 'error');
+      return;
+    }
+    if (!form.phone.trim()) {
+      showToast('Fadlan gali lambarka taleefanka (Phone is required)', 'error');
+      return;
+    }
+    if (!ageInput && !form.date_of_birth) {
+      showToast('Fadlan gali da\'da bukaanka (Age is required)', 'error');
+      return;
+    }
+
     setSaving(true);
 
     try {
       const url = editingPatient ? `/api/patients/${editingPatient.id}` : '/api/patients';
       const method = editingPatient ? 'PUT' : 'POST';
 
+      const payload = {
+        ...form,
+        age: ageInput || undefined,
+        last_name: form.last_name?.trim() || '-',
+      };
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
@@ -180,47 +243,59 @@ export default function PatientsPage() {
                   <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Patient</th>
                   <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Contact</th>
                   <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Gender</th>
-                  <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">DOB</th>
+                  <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Age / DOB</th>
                   <th className="px-5 py-3.5 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Insurance</th>
                   <th className="px-5 py-3.5 text-right text-xs font-bold text-slate-400 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {patients.map((patient) => (
-                  <tr key={patient.id} className="border-b border-slate-100 hover:bg-slate-50/70 transition-colors">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-600 font-bold text-sm">
-                          {patient.first_name[0]}{patient.last_name[0]}
+                {patients.map((patient) => {
+                  const age = calculateAge(patient.date_of_birth);
+                  return (
+                    <tr key={patient.id} className="border-b border-slate-100 hover:bg-slate-50/70 transition-colors">
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-600 font-bold text-sm">
+                            {patient.first_name?.[0] || 'P'}{patient.last_name && patient.last_name !== '-' ? patient.last_name[0] : ''}
+                          </div>
+                          <div>
+                            <span className="text-sm font-semibold text-slate-800">
+                              {patient.first_name} {patient.last_name && patient.last_name !== '-' ? patient.last_name : ''}
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-sm font-semibold text-slate-800">{patient.first_name} {patient.last_name}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <p className="text-sm font-medium text-slate-800">{patient.phone}</p>
-                      <p className="text-xs text-slate-400">{patient.email || '—'}</p>
-                    </td>
-                    <td className="px-5 py-4 text-sm text-slate-600 capitalize">{patient.gender || '—'}</td>
-                    <td className="px-5 py-4 text-sm text-slate-600">
-                      {patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString() : '—'}
-                    </td>
-                    <td className="px-5 py-4 text-sm text-slate-600">{patient.insurance_provider || '—'}</td>
-                    <td className="px-5 py-4 text-right">
-                      <button
-                        onClick={() => openEditModal(patient)}
-                        className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors mr-2"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(patient.id)}
-                        className="px-3 py-1.5 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition-colors"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-5 py-4">
+                        <p className="text-sm font-medium text-slate-800">{patient.phone || '—'}</p>
+                        <p className="text-xs text-slate-400">{patient.email || '—'}</p>
+                      </td>
+                      <td className="px-5 py-4 text-sm text-slate-600 capitalize">{patient.gender || '—'}</td>
+                      <td className="px-5 py-4 text-sm text-slate-600">
+                        {patient.date_of_birth ? (
+                          <div>
+                            <span className="font-semibold text-slate-800">{age !== null ? `${age} jir` : '—'}</span>
+                            <span className="text-xs text-slate-400 block">{new Date(patient.date_of_birth).toLocaleDateString()}</span>
+                          </div>
+                        ) : '—'}
+                      </td>
+                      <td className="px-5 py-4 text-sm text-slate-600">{patient.insurance_provider || '—'}</td>
+                      <td className="px-5 py-4 text-right">
+                        <button
+                          onClick={() => openEditModal(patient)}
+                          className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-medium transition-colors mr-2"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(patient.id)}
+                          className="px-3 py-1.5 text-xs bg-red-50 hover:bg-red-100 text-red-600 rounded-lg font-medium transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -234,145 +309,260 @@ export default function PatientsPage() {
         title={editingPatient ? 'Edit Patient' : 'Add New Patient'}
         size="lg"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Information Notice */}
+          <div className="p-3 bg-blue-50/80 border border-blue-200/70 rounded-xl text-xs text-blue-800 flex items-center gap-2">
+            <span className="text-base">ℹ️</span>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">First Name *</label>
-              <input
-                type="text" required value={form.first_name}
-                onChange={(e) => updateForm('first_name', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
-              />
+              <strong>Xogta Waajibka ah (Required):</strong> Kaliya <strong>Magaca</strong>, <strong>Numberka</strong>, iyo <strong>Da&apos;da</strong> ayaa waajib ah. Qodobada kale oo dhan waa optional.
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Last Name *</label>
-              <input
-                type="text" required value={form.last_name}
-                onChange={(e) => updateForm('last_name', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
-              />
+          </div>
+
+          {/* Core Required Section */}
+          <div className="bg-slate-50/70 p-4 rounded-xl border border-slate-200/80 space-y-4">
+            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+              Xogta Muhiimka ah (Required)
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  First Name (Magaca) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Axmed Cali"
+                  value={form.first_name}
+                  onChange={(e) => updateForm('first_name', e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Phone (Number-ka) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  required
+                  placeholder="e.g. 061XXXXXXX"
+                  value={form.phone}
+                  onChange={(e) => updateForm('phone', e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Age (Da&apos;da) <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      min="0"
+                      max="125"
+                      required={!form.date_of_birth}
+                      placeholder="e.g. 25"
+                      value={ageInput}
+                      onChange={(e) => handleAgeChange(e.target.value)}
+                      className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 pr-12"
+                    />
+                    <span className="absolute right-3 top-2 text-xs text-slate-400 font-medium pointer-events-none">
+                      jir
+                    </span>
+                  </div>
+                  <input
+                    type="date"
+                    value={form.date_of_birth}
+                    onChange={(e) => handleDobChange(e.target.value)}
+                    className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-700 text-xs focus:border-blue-600"
+                    title="Or pick exact date of birth"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">Gali da&apos;da (tusaale 25) ama dooro taariikhda</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Last Name (Aabbaha / Qoyska) <span className="text-xs text-slate-400 font-normal">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Optional"
+                  value={form.last_name}
+                  onChange={(e) => updateForm('last_name', e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Phone *</label>
-              <input
-                type="tel" required value={form.phone}
-                onChange={(e) => updateForm('phone', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Email</label>
-              <input
-                type="email" value={form.email}
-                onChange={(e) => updateForm('email', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Date of Birth</label>
-              <input
-                type="date" value={form.date_of_birth}
-                onChange={(e) => updateForm('date_of_birth', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Gender</label>
-              <select
-                value={form.gender}
-                onChange={(e) => updateForm('gender', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
-              >
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Blood Group</label>
-              <select
-                value={form.blood_group}
-                onChange={(e) => updateForm('blood_group', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
-              >
-                <option value="">Select</option>
-                <option value="A+">A+</option><option value="A-">A-</option>
-                <option value="B+">B+</option><option value="B-">B-</option>
-                <option value="AB+">AB+</option><option value="AB-">AB-</option>
-                <option value="O+">O+</option><option value="O-">O-</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">City</label>
-              <input
-                type="text" value={form.city}
-                onChange={(e) => updateForm('city', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Address</label>
-              <input
-                type="text" value={form.address}
-                onChange={(e) => updateForm('address', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Emergency Contact Name</label>
-              <input
-                type="text" value={form.emergency_contact_name}
-                onChange={(e) => updateForm('emergency_contact_name', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Emergency Contact Phone</label>
-              <input
-                type="tel" value={form.emergency_contact_phone}
-                onChange={(e) => updateForm('emergency_contact_phone', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Insurance Provider</label>
-              <input
-                type="text" value={form.insurance_provider}
-                onChange={(e) => updateForm('insurance_provider', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Insurance Number</label>
-              <input
-                type="text" value={form.insurance_number}
-                onChange={(e) => updateForm('insurance_number', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Allergies</label>
-              <textarea
-                value={form.allergies} rows={2}
-                onChange={(e) => updateForm('allergies', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Medical History</label>
-              <textarea
-                value={form.medical_history} rows={2}
-                onChange={(e) => updateForm('medical_history', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Notes</label>
-              <textarea
-                value={form.notes} rows={2}
-                onChange={(e) => updateForm('notes', e.target.value)}
-                className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
-              />
+          </div>
+
+          {/* Optional Details Section */}
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">
+              Qodobada Kale (Dhammaan Waa Optional)
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Gender <span className="text-xs text-slate-400">(Optional)</span>
+                </label>
+                <select
+                  value={form.gender}
+                  onChange={(e) => updateForm('gender', e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                >
+                  <option value="">Dooro Gender (Optional)</option>
+                  <option value="male">Male (Lab)</option>
+                  <option value="female">Female (Dhedig)</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Email <span className="text-xs text-slate-400">(Optional)</span>
+                </label>
+                <input
+                  type="email"
+                  placeholder="Optional"
+                  value={form.email}
+                  onChange={(e) => updateForm('email', e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  City <span className="text-xs text-slate-400">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Optional"
+                  value={form.city}
+                  onChange={(e) => updateForm('city', e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Blood Group <span className="text-xs text-slate-400">(Optional)</span>
+                </label>
+                <select
+                  value={form.blood_group}
+                  onChange={(e) => updateForm('blood_group', e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                >
+                  <option value="">Select (Optional)</option>
+                  <option value="A+">A+</option><option value="A-">A-</option>
+                  <option value="B+">B+</option><option value="B-">B-</option>
+                  <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                  <option value="O+">O+</option><option value="O-">O-</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Address <span className="text-xs text-slate-400">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Optional"
+                  value={form.address}
+                  onChange={(e) => updateForm('address', e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Emergency Contact Name <span className="text-xs text-slate-400">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Optional"
+                  value={form.emergency_contact_name}
+                  onChange={(e) => updateForm('emergency_contact_name', e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Emergency Contact Phone <span className="text-xs text-slate-400">(Optional)</span>
+                </label>
+                <input
+                  type="tel"
+                  placeholder="Optional"
+                  value={form.emergency_contact_phone}
+                  onChange={(e) => updateForm('emergency_contact_phone', e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Insurance Provider <span className="text-xs text-slate-400">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Optional"
+                  value={form.insurance_provider}
+                  onChange={(e) => updateForm('insurance_provider', e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Insurance Number <span className="text-xs text-slate-400">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Optional"
+                  value={form.insurance_number}
+                  onChange={(e) => updateForm('insurance_number', e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Allergies <span className="text-xs text-slate-400">(Optional)</span>
+                </label>
+                <textarea
+                  value={form.allergies} rows={2}
+                  placeholder="Optional"
+                  onChange={(e) => updateForm('allergies', e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Medical History <span className="text-xs text-slate-400">(Optional)</span>
+                </label>
+                <textarea
+                  value={form.medical_history} rows={2}
+                  placeholder="Optional"
+                  onChange={(e) => updateForm('medical_history', e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Notes <span className="text-xs text-slate-400">(Optional)</span>
+                </label>
+                <textarea
+                  value={form.notes} rows={2}
+                  placeholder="Optional"
+                  onChange={(e) => updateForm('notes', e.target.value)}
+                  className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                />
+              </div>
             </div>
           </div>
 

@@ -57,6 +57,26 @@ export async function POST(request: NextRequest) {
     const { clinicId } = getTenantContext(request);
     const targetClinicId = body.clinic_id || clinicId || (await getDefaultClinicId());
 
+    // Calculate DOB if only age is provided
+    let dob = body.date_of_birth || null;
+    if (!dob && body.age) {
+      const birthYear = new Date().getFullYear() - parseInt(body.age);
+      if (!isNaN(birthYear)) {
+        dob = `${birthYear}-01-01`;
+      }
+    }
+
+    // Split name or handle single name
+    let firstName = body.first_name?.trim() || '';
+    let lastName = body.last_name?.trim() || '';
+    if (!lastName && firstName.includes(' ')) {
+      const parts = firstName.split(/\s+/);
+      firstName = parts[0];
+      lastName = parts.slice(1).join(' ');
+    } else if (!lastName) {
+      lastName = '-';
+    }
+
     if (isDbConfigured()) {
       const res = await query(
         `INSERT INTO patients (
@@ -67,12 +87,12 @@ export async function POST(request: NextRequest) {
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
         RETURNING *`,
         [
-          body.first_name,
-          body.last_name,
-          body.date_of_birth || null,
+          firstName,
+          lastName,
+          dob,
           body.gender || null,
           body.email || null,
-          body.phone,
+          body.phone || '',
           body.address || null,
           body.city || null,
           body.emergency_contact_name || null,
@@ -89,7 +109,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(res.rows[0], { status: 201 });
     }
 
-    const newPatient = mockStore.addPatient(body);
+    const newPatient = mockStore.addPatient({
+      ...body,
+      first_name: firstName,
+      last_name: lastName,
+      date_of_birth: dob || '',
+    });
     return NextResponse.json(newPatient, { status: 201 });
   } catch (err: any) {
     console.error('Error creating patient:', err);

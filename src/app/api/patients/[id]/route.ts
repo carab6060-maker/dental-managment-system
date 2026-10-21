@@ -32,6 +32,14 @@ export async function PUT(
   try {
     const body = await request.json();
 
+    let dob = body.date_of_birth;
+    if (dob === undefined && body.age) {
+      const birthYear = new Date().getFullYear() - parseInt(body.age);
+      if (!isNaN(birthYear)) {
+        dob = `${birthYear}-01-01`;
+      }
+    }
+
     if (isDbConfigured()) {
       const res = await query(
         `UPDATE patients SET
