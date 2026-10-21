@@ -10,7 +10,7 @@ interface Treatment {
   category: string;
   description: string;
   duration_minutes: number;
-  cost: number;
+  cost: number | string;
   created_at: string;
 }
 
@@ -41,7 +41,7 @@ export default function TreatmentsPage() {
       if (categoryFilter) params.set('category', categoryFilter);
       const res = await fetch(`/api/treatments?${params}`);
       const data = await res.json();
-      setTreatments(data.data || []);
+      setTreatments(Array.isArray(data.data) ? data.data : []);
     } catch {
       showToast('Failed to load treatments', 'error');
     } finally {
@@ -54,7 +54,13 @@ export default function TreatmentsPage() {
   const openAddModal = () => { setEditingTreatment(null); setForm(emptyTreatment); setShowModal(true); };
   const openEditModal = (t: Treatment) => {
     setEditingTreatment(t);
-    setForm({ name: t.name, category: t.category, description: t.description || '', duration_minutes: t.duration_minutes, cost: t.cost });
+    setForm({
+      name: t.name || '',
+      category: t.category || 'General',
+      description: t.description || '',
+      duration_minutes: Number(t.duration_minutes || 30),
+      cost: Number(t.cost || 0),
+    });
     setShowModal(true);
   };
 
@@ -84,9 +90,10 @@ export default function TreatmentsPage() {
 
   const updateForm = (field: string, value: any) => setForm((prev) => ({ ...prev, [field]: value }));
 
-  // Group by category
-  const grouped = treatments.reduce((acc: Record<string, Treatment[]>, t) => {
-    (acc[t.category] = acc[t.category] || []).push(t);
+  // Group by category safely
+  const grouped = (treatments || []).reduce((acc: Record<string, Treatment[]>, t) => {
+    const cat = t.category || 'General';
+    (acc[cat] = acc[cat] || []).push(t);
     return acc;
   }, {});
 
@@ -143,8 +150,8 @@ export default function TreatmentsPage() {
                       <tr key={t.id} className="border-b border-slate-100 hover:bg-slate-50/70 transition-colors">
                         <td className="px-5 py-4 text-sm font-semibold text-slate-800">{t.name}</td>
                         <td className="px-5 py-4 text-sm text-slate-500 max-w-xs truncate">{t.description || '—'}</td>
-                        <td className="px-5 py-4 text-sm text-center text-slate-600 font-medium">{t.duration_minutes} min</td>
-                        <td className="px-5 py-4 text-sm text-right text-emerald-600 font-bold">${t.cost.toFixed(2)}</td>
+                        <td className="px-5 py-4 text-sm text-center text-slate-600 font-medium">{t.duration_minutes || 30} min</td>
+                        <td className="px-5 py-4 text-sm text-right text-emerald-600 font-bold">${Number(t.cost || 0).toFixed(2)}</td>
                         <td className="px-5 py-4 text-right">
                           <button onClick={() => openEditModal(t)} className="px-3 py-1.5 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-colors mr-2">Edit</button>
                           <button onClick={() => handleDelete(t.id)} className="px-3 py-1.5 text-xs bg-red-50 hover:bg-red-100 text-red-600 font-medium rounded-lg transition-colors">Delete</button>

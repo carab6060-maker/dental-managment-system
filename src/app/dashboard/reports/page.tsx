@@ -299,7 +299,7 @@ export default function ReportsPage() {
                         <div className="flex justify-between text-xs">
                           <span className="capitalize font-semibold text-slate-700">{m.method}</span>
                           <span className="text-emerald-600 font-bold">
-                            ${m.amount.toFixed(2)} ({m.pct.toFixed(1)}%)
+                            ${Number(m.amount || 0).toFixed(2)} ({Number(m.pct || 0).toFixed(1)}%)
                           </span>
                         </div>
                         <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
@@ -328,7 +328,7 @@ export default function ReportsPage() {
                         <div className="flex justify-between text-xs">
                           <span className="capitalize font-semibold text-slate-700">{s.status}</span>
                           <span className="text-[#1E2238] font-bold">
-                            {s.count} visits ({s.pct.toFixed(1)}%)
+                            {s.count} visits ({Number(s.pct || 0).toFixed(1)}%)
                           </span>
                         </div>
                         <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
@@ -374,7 +374,7 @@ export default function ReportsPage() {
                             <td className="px-4 py-3 font-semibold text-[#1E2238]">{t.name}</td>
                             <td className="px-4 py-3 text-center text-slate-600 font-medium">{t.count}</td>
                             <td className="px-4 py-3 text-right font-bold text-emerald-600">
-                              ${t.revenue.toFixed(2)}
+                              ${Number(t.revenue || 0).toFixed(2)}
                             </td>
                           </tr>
                         ))}
@@ -525,10 +525,10 @@ export default function ReportsPage() {
                           <td className="px-4 py-3 font-semibold text-[#1E2238]">{t.name}</td>
                           <td className="px-4 py-3 text-center text-slate-600 font-medium">{t.count}</td>
                           <td className="px-4 py-3 text-right font-bold text-emerald-600">
-                            ${t.revenue.toFixed(2)}
+                            ${Number(t.revenue || 0).toFixed(2)}
                           </td>
                           <td className="px-4 py-3 text-right text-slate-500 font-medium">
-                            ${t.count > 0 ? (t.revenue / t.count).toFixed(2) : '0.00'}
+                            ${t.count > 0 ? (Number(t.revenue || 0) / t.count).toFixed(2) : '0.00'}
                           </td>
                         </tr>
                       ))
